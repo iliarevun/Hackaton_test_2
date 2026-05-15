@@ -53,6 +53,7 @@ public class SteganographyController {
             @RequestParam(value = "text",       required = false) String text,
             @RequestParam(value = "file",       required = false) MultipartFile file,
             @RequestParam(value = "imageTheme", defaultValue = "") String imageTheme,
+            @RequestParam(value = "coverPhoto", required = false) MultipartFile coverPhoto,
             Principal principal, Authentication auth) {
 
         boolean hasText = text != null && !text.isBlank();
@@ -62,12 +63,13 @@ public class SteganographyController {
         }
 
         try {
-            byte[] fileBytes = hasFile ? file.getBytes() : null;
-            String fileName  = hasFile ? file.getOriginalFilename() : null;
-            String payload   = hasText ? text : "";
+            byte[] fileBytes  = hasFile ? file.getBytes() : null;
+            String fileName   = hasFile ? file.getOriginalFilename() : null;
+            String payload    = hasText ? text : "";
+            byte[] coverBytes = (coverPhoto != null && !coverPhoto.isEmpty()) ? coverPhoto.getBytes() : null;
 
-            log.info("Encrypt request: hasText={}, hasFile={}, theme={}", hasText, hasFile, imageTheme);
-            Map<String, Object> result = steganographyService.encryptAndEmbed(payload, fileBytes, fileName, imageTheme);
+            log.info("Encrypt: hasText={}, hasFile={}, hasCover={}, style={}", hasText, hasFile, coverBytes!=null, imageTheme);
+            Map<String, Object> result = steganographyService.encryptAndEmbed(payload, fileBytes, fileName, imageTheme, coverBytes);
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {

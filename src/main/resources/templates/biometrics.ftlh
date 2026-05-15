@@ -293,7 +293,7 @@
       const pct = Math.min(100, Math.round(count / 5 * 100));
       document.getElementById('aProgress').style.width = pct+'%';
       document.getElementById('aProgressLabel').textContent = count >= 5
-          ? count + ' натискань записано ✓' : `Потрібно ще ${5-count} натискань`;
+          ? count + ' натискань записано ✓' : 'Потрібно ще ' + (5-count) + ' натискань';
       document.getElementById('btnAnalyze').disabled = count < 5;
     }
     if (session === 'enroll') {
@@ -379,7 +379,7 @@
       if (d.error) { alert(d.error); return; }
       document.getElementById('eHash').textContent = 'Відбиток: ' + d.fingerprintHash;
       document.getElementById('eStats').innerHTML =
-        `<div style="color:var(--text-second);font-size:0.8rem;">Швидкість: ${d.typingSpeedCpm} CPM &nbsp;|&nbsp; Унікальність: ${d.uniquenessScore}%</div>`;
+        '<div style="color:var(--text-second);font-size:0.8rem;">Швидкість: ' + d.typingSpeedCpm + ' CPM &nbsp;|&nbsp; Унікальність: ' + d.uniquenessScore + '%</div>';
       document.getElementById('enrollResult').classList.add('show');
     } catch(e) { alert('Помилка: '+e.message); }
     finally { document.getElementById('eSpinner').classList.remove('show'); document.getElementById('btnEnroll').disabled=false; }
@@ -413,7 +413,7 @@
     document.getElementById('vVerdict').textContent = verdictMap[d.verdict] || d.verdict;
     document.getElementById('vVerdict').style.color = color;
     document.getElementById('vSimPct').textContent = sim+'%';
-    document.getElementById('vRing').style.background = `conic-gradient(${color} ${sim}%, var(--bg-card3) 0)`;
+    document.getElementById('vRing').style.background = 'conic-gradient(' + color + ' ' + sim + '%, var(--bg-card3) 0)';
     document.getElementById('vRing').style.color = color;
     document.getElementById('vExp').textContent = d.explanation;
     document.getElementById('verifyResult').classList.add('show');

@@ -31,53 +31,41 @@ public class MediaAnalysisService {
             "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=";
 
     public Map<String, Object> analyzeMedia(String text) {
-        // Trim text and sanitize: escape backslashes and double-quotes so the
-        // text can safely sit inside a JSON string in the prompt.
-        String safeText = (text.length() > 3000 ? text.substring(0, 3000) : text)
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"");
+        String safeText = text.length() > 3000 ? text.substring(0, 3000) : text;
 
-        // Use a structured prompt with the text as a proper JSON field
-        // so user input cannot break the outer JSON structure.
-        String prompt = """
-            Ти — експерт з медіаграмотності та критичного мислення. Проаналізуй наданий текст.
+        // Build content parts with text in a separate part so user text never
+        // interferes with the instruction.
+        String instruction = """
+            Ти — експерт з медіаграмотності та критичного мислення. Проаналізуй наданий текст нижче.
             Визнач наявність:
-            1. **Упередженості ШІ** — чи текст написаний або оброблений ШІ з характерними патернами
-            2. **Фейку** — чи є ознаки дезінформації, маніпуляції фактами, відсутності джерел
-            3. **Пропаганди** — чи використовуються маніпулятивні техніки (емоційна мова, чорно-біле мислення, апеляція до страху/ненависті)
+            1. Упередженості ШІ — чи текст написаний або оброблений ШІ з характерними патернами
+            2. Фейку — чи є ознаки дезінформації, маніпуляції фактами, відсутності джерел
+            3. Пропаганди — чи використовуються маніпулятивні техніки (емоційна мова, чорно-біле мислення, апеляція до страху/ненависті)
 
-            Текст для аналізу:
-            "%s"
+            ТЕКСТ ДЛЯ АНАЛІЗУ:
+            ---
+            """ + safeText + """
+            ---
 
-            Відповідь ТІЛЬКИ у форматі JSON (без markdown, без пояснень поза JSON):
+            Поверни ВИКЛЮЧНО валідний JSON без жодного markdown, без коментарів, без тексту до або після:
             {
-              "overallRisk": "LOW|MEDIUM|HIGH",
-              "overallScore": 0-100,
-              "aiBias": {
-                "detected": true/false,
-                "score": 0-100,
-                "explanation": "коротке пояснення"
-              },
-              "fakeNews": {
-                "detected": true/false,
-                "score": 0-100,
-                "explanation": "коротке пояснення"
-              },
-              "propaganda": {
-                "detected": true/false,
-                "score": 0-100,
-                "explanation": "коротке пояснення",
-                "techniques": ["техніка1", "техніка2"]
-              },
-              "summary": "загальний висновок 2-3 речення",
-              "recommendation": "що робити читачу"
+              "overallRisk": "LOW",
+              "overallScore": 12,
+              "aiBias": { "detected": false, "score": 10, "explanation": "..." },
+              "fakeNews": { "detected": false, "score": 15, "explanation": "..." },
+              "propaganda": { "detected": false, "score": 8, "explanation": "...", "techniques": [] },
+              "summary": "...",
+              "recommendation": "..."
             }
-            """.formatted(safeText);
+            """;
 
         try {
             Map<String, Object> requestBody = Map.of(
-                    "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
-                    "generationConfig", Map.of("temperature", 0.2, "maxOutputTokens", 1500)
+                    "contents", List.of(Map.of("parts", List.of(Map.of("text", instruction)))),
+                    "generationConfig", Map.of(
+                            "temperature", 0.1,
+                            "maxOutputTokens", 8192
+                    )
             );
 
             HttpHeaders headers = new HttpHeaders();
@@ -89,12 +77,27 @@ public class MediaAnalysisService {
             );
 
             JsonNode root = objectMapper.readTree(response.getBody());
-            String raw = root.path("candidates").get(0)
-                    .path("content").path("parts").get(0)
-                    .path("text").asText();
+            log.debug("Gemini raw response: {}", response.getBody().substring(0, Math.min(500, response.getBody().length())));
 
-            // Strip markdown fences if present
-            raw = raw.replaceAll("(?s)```json\\s*", "").replaceAll("(?s)```\\s*", "").trim();
+            // Collect ALL text parts (Gemini 2.5 may return thinking + answer parts)
+            String raw = "";
+            JsonNode parts = root.path("candidates").get(0).path("content").path("parts");
+            if (parts.isArray()) {
+                StringBuilder sb = new StringBuilder();
+                for (JsonNode part : parts) {
+                    String t = part.path("text").asText("");
+                    if (!t.isBlank()) sb.append(t);
+                }
+                raw = sb.toString();
+            }
+
+            // Strip markdown fences and extract first JSON object
+            raw = raw.replaceAll("(?s)```json\s*", "").replaceAll("(?s)```\s*", "").trim();
+            // Find the outermost JSON object
+            int start = raw.indexOf("{");
+            int end   = raw.lastIndexOf("}");
+            if (start >= 0 && end > start) raw = raw.substring(start, end + 1);
+
             JsonNode result = objectMapper.readTree(raw);
             return objectMapper.convertValue(result, Map.class);
 
@@ -103,8 +106,11 @@ public class MediaAnalysisService {
             return Map.of(
                     "overallRisk", "UNKNOWN",
                     "overallScore", 0,
-                    "summary", "Не вдалося проаналізувати текст. Спробуйте ще раз.",
-                    "error", e.getMessage()
+                    "aiBias",     Map.of("detected", false, "score", 0, "explanation", "Помилка аналізу"),
+                    "fakeNews",   Map.of("detected", false, "score", 0, "explanation", "Помилка аналізу"),
+                    "propaganda", Map.of("detected", false, "score", 0, "explanation", "Помилка аналізу", "techniques", List.of()),
+                    "summary",        "Не вдалося проаналізувати текст: " + e.getMessage(),
+                    "recommendation", "Спробуйте ще раз або скоротіть текст."
             );
         }
     }

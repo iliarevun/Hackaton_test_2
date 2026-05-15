@@ -135,6 +135,14 @@
     .decrypt-file-icon { font-size:2rem; }
     .decrypt-file-name { font-family:var(--font-ui); font-size:0.85rem; font-weight:700; color:var(--text-white); }
     .decrypt-file-size { font-family:var(--font-ui); font-size:0.72rem; color:var(--text-muted); margin-top:2px; }
+    /* Style chips */
+    .style-grid { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:4px; }
+    .style-chip { background:var(--bg-card2); border:1px solid var(--border); border-radius:20px;
+      padding:6px 14px; font-family:var(--font-ui); font-size:.75rem; color:var(--text-second);
+      cursor:pointer; transition:all .18s; white-space:nowrap; }
+    .style-chip:hover { border-color:rgba(139,92,246,.4); color:#c4b5fd; }
+    .style-chip.active { border-color:rgba(139,92,246,.6); color:#c4b5fd; background:rgba(139,92,246,.1); font-weight:600; }
+
     .decrypt-err { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.25);
       border-radius:var(--r-md); padding:14px 18px; margin-top:14px; display:none;
       font-family:var(--font-ui); font-size:0.82rem; color:#f87171; }
@@ -202,16 +210,37 @@
       </div>
       <input type="file" id="fileInput" style="display:none" onchange="onFile()">
 
-      <!-- Theme -->
-      <div class="field-label">Тема обкладинки (Gemini згенерує фото)</div>
-      <div class="theme-row" id="themeRow">
-        <div class="theme-chip active" data-theme="A peaceful forest path in autumn, photorealistic">🌲 Ліс</div>
-        <div class="theme-chip"       data-theme="A serene ocean beach at sunset, photorealistic">🌊 Океан</div>
-        <div class="theme-chip"       data-theme="A cozy european city street with cafe lights at night, photorealistic">🏙 Місто</div>
-        <div class="theme-chip"       data-theme="Abstract digital art with vibrant neon colors, futuristic">🎨 Абстракція</div>
-        <div class="theme-chip"       data-theme="Mountain landscape with snow peaks and clear sky, photorealistic">🏔 Гори</div>
-        <div class="theme-chip"       data-theme="Cherry blossom garden in spring, soft light, photorealistic">🌸 Сакура</div>
+      <!-- Style / theme selection -->
+      <div class="field-label" style="margin-top:16px;">Стиль зображення</div>
+      <div class="style-grid" id="styleGrid">
+        <div class="style-chip active" data-style="random">🎲 Випадковий</div>
+        <div class="style-chip" data-style="cyberpunk">🌆 Cyberpunk</div>
+        <div class="style-chip" data-style="impressionism">🎨 Імпресіонізм</div>
+        <div class="style-chip" data-style="watercolor">💧 Акварель</div>
+        <div class="style-chip" data-style="glitch">⚡ Glitch Art</div>
+        <div class="style-chip" data-style="vaporwave">🌸 Vaporwave</div>
+        <div class="style-chip" data-style="oilpainting">🖼 Олія</div>
+        <div class="style-chip" data-style="ukiyoe">🗻 Ukiyo-e</div>
+        <div class="style-chip" data-style="noir">🕵 Noir</div>
+        <div class="style-chip" data-style="surrealism">🌀 Сюрреалізм</div>
+        <div class="style-chip" data-style="pixelart">👾 Pixel Art</div>
+        <div class="style-chip" data-style="custom">✏️ Своя тема</div>
       </div>
+      <div id="customThemeWrap" style="display:none;margin-top:10px;">
+        <input type="text" id="customTheme" placeholder="Наприклад: gothic cathedral, baroque style..." style="font-family:var(--font-ui);font-size:.85rem;">
+      </div>
+
+      <!-- Own cover photo -->
+      <div class="field-label" style="margin-top:16px;">Або завантаж власне фото-обкладинку</div>
+      <div class="upload-zone" id="coverDropZone" onclick="document.getElementById('coverPhotoInput').click()"
+           ondragover="event.preventDefault();this.classList.add('over')"
+           ondragleave="this.classList.remove('over')"
+           ondrop="event.preventDefault();this.classList.remove('over');setCoverPhoto(event.dataTransfer.files[0])">
+        <div class="uz-icon">📷</div>
+        <div class="uz-label">PNG / JPG — дані будуть сховані всередині твого фото</div>
+        <div class="uz-file" id="coverPhotoName">Не вибрано — буде згенеровано автоматично</div>
+      </div>
+      <input type="file" id="coverPhotoInput" accept="image/png,image/jpeg,image/jpg" style="display:none" onchange="setCoverPhoto(this.files[0])">
 
       <button class="btn-encrypt" id="btnEncrypt" onclick="doEncrypt()">🔐 ЗАШИФРУВАТИ ТА СХОВАТИ</button>
 
@@ -231,7 +260,7 @@
         </div>
 
         <!-- Key box -->
-        <div class="key-box">
+        <div class="key-box" id="keyBox">
           <div class="key-box-title">
             🔑 ОДНОРАЗОВИЙ КЛЮЧ — СКОПІЮЙ ЗАРАЗ
           </div>
@@ -263,6 +292,13 @@
           </div>
         </div>
 
+      <!-- Shown after key is destroyed -->
+      <div id="keyDestroyedNote" style="display:none;align-items:center;gap:10px;background:rgba(107,114,128,.08);border:1px solid rgba(107,114,128,.2);border-radius:var(--r-md);padding:12px 16px;margin-top:12px;">
+        <span style="font-size:1.2rem;">⛔</span>
+        <div style="font-family:var(--font-ui);font-size:.78rem;color:#9ca3af;line-height:1.4;">
+          Ключ знищено назавжди. Зображення збережено — розшифрувати можна тільки якщо ти скопіював ключ.
+        </div>
+      </div>
       </div>
     </div>
 
@@ -280,7 +316,7 @@
       <input type="file" id="decImage" accept="image/png" style="display:none" onchange="onDecFile()">
 
       <div class="field-label" style="margin-top:16px;">Ключ доступу</div>
-      <input type="text" id="decKey" placeholder="XXXXXXXXXXXXXXXXXXXX" style="font-family:monospace;font-size:1rem;letter-spacing:3px;text-transform:uppercase">
+      <input type="text" id="decKey" placeholder="XXXXXXXXXXXXXXXXXXXXXXXX" style="font-family:var(--font-mono);font-size:.95rem;letter-spacing:2px;text-transform:uppercase;">
 
       <button class="btn-decrypt" id="btnDecrypt" onclick="doDecrypt()">🔓 РОЗШИФРУВАТИ</button>
 
@@ -306,6 +342,13 @@
 <script>
   // ── State ──────────────────────────────────────────────────────────────
   let selectedFile = null;
+let selectedCoverPhoto = null;
+
+function setCoverPhoto(f) {
+  if (!f) return;
+  selectedCoverPhoto = f;
+  document.getElementById('coverPhotoName').textContent = '✅ ' + f.name;
+}
   let selectedDecFile = null;
   let currentKey = null;
   let countdownInterval = null;
@@ -320,13 +363,35 @@
   }
 
   // ── Theme chips ────────────────────────────────────────────────────────
-  document.querySelectorAll('.theme-chip').forEach(c => c.addEventListener('click', () => {
-    document.querySelectorAll('.theme-chip').forEach(x => x.classList.remove('active'));
+  const STYLES = {
+    random:       null,
+    cyberpunk:    'cyberpunk',
+    impressionism:'impressionism',
+    watercolor:   'watercolor',
+    glitch:       'glitch',
+    vaporwave:    'vaporwave',
+    oilpainting:  'oilpainting',
+    ukiyoe:       'ukiyoe',
+    noir:         'noir',
+    surrealism:   'surrealism',
+    pixelart:     'pixelart',
+    custom:       'custom'
+  };
+
+  document.querySelectorAll('.style-chip').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('.style-chip').forEach(x => x.classList.remove('active'));
     c.classList.add('active');
+    document.getElementById('customThemeWrap').style.display =
+      c.dataset.style === 'custom' ? 'block' : 'none';
   }));
-  function getTheme() {
-    const active = document.querySelector('.theme-chip.active');
-    return active ? active.dataset.theme : '';
+
+  function getStyle() {
+    const active = document.querySelector('.style-chip.active');
+    if (!active) return '';
+    const s = active.dataset.style;
+    if (s === 'custom') return document.getElementById('customTheme').value.trim();
+    if (s === 'random') return ''; // server picks random
+    return s;
   }
 
   // ── File upload (encrypt) ──────────────────────────────────────────────
@@ -354,7 +419,8 @@
       const fd = new FormData();
       if (text) fd.append('text', text);
       if (selectedFile) fd.append('file', selectedFile);
-      fd.append('imageTheme', getTheme());
+      fd.append('imageTheme', getStyle());
+      if (selectedCoverPhoto) fd.append('coverPhoto', selectedCoverPhoto);
 
       const res  = await fetch('/steganography/encrypt', { method:'POST', body:fd });
       const data = await res.json();
@@ -402,8 +468,15 @@
 
       if (remaining <= 0) {
         clearInterval(countdownInterval);
-        cdDead.classList.add('show');
-        document.getElementById('btnCopy').disabled = true;
+        // Hide the entire key box — key is gone forever
+        document.getElementById('keyBox').style.transition = 'opacity .8s';
+        document.getElementById('keyBox').style.opacity = '0';
+        setTimeout(() => {
+          document.getElementById('keyBox').style.display = 'none';
+          // Show "key destroyed" notice below image
+          document.getElementById('keyDestroyedNote').style.display = 'flex';
+        }, 800);
+        return;
       }
       remaining--;
     }
@@ -430,7 +503,7 @@
   // ── DECRYPT ───────────────────────────────────────────────────────────
   async function doDecrypt() {
     if (!selectedDecFile) { alert('Завантаж зображення'); return; }
-    const key = document.getElementById('decKey').value.trim();
+    const key = document.getElementById('decKey').value.trim().replace(/-/g,'').toUpperCase();
     if (!key) { alert('Введи ключ'); return; }
 
     setLoading('dec', true);
@@ -440,7 +513,7 @@
     try {
       const fd = new FormData();
       fd.append('image', selectedDecFile);
-      fd.append('key', key.replace(/-/g,''));
+      fd.append('key', key);
 
       const res  = await fetch('/steganography/decrypt', { method:'POST', body:fd });
       const data = await res.json();
@@ -462,15 +535,18 @@
         for(let i=0;i<bytes.length;i++) arr[i]=bytes.charCodeAt(i);
         const blob  = new Blob([arr]);
         const url   = URL.createObjectURL(blob);
-        content.innerHTML =
-          '<div class="decrypt-file-box">' +
-            '<div class="decrypt-file-icon">' + fileIcon(data.fileName) + '</div>' +
-            '<div>' +
-              '<div class="decrypt-file-name">' + escHtml(data.fileName) + '</div>' +
-              '<div class="decrypt-file-size">' + fmtSize(arr.length) + '</div>' +
-            '</div>' +
-            '<a href="' + url + '" download="' + escHtml(data.fileName) + '" class="btn-download" style="margin-left:auto;">⬇️ Завантажити</a>' +
-          '</div>';
+        const ico = getFileIcon(data.fileName);
+        const box = document.createElement('div');
+        box.className = 'decrypt-file-box';
+        const iconDiv = document.createElement('div'); iconDiv.className = 'decrypt-file-icon'; iconDiv.textContent = ico;
+        const infoDiv = document.createElement('div');
+        const nameDiv = document.createElement('div'); nameDiv.className = 'decrypt-file-name'; nameDiv.textContent = data.fileName;
+        const sizeDiv = document.createElement('div'); sizeDiv.className = 'decrypt-file-size'; sizeDiv.textContent = fmtSize(arr.length);
+        infoDiv.appendChild(nameDiv); infoDiv.appendChild(sizeDiv);
+        const dlBtn = document.createElement('a'); dlBtn.href = url; dlBtn.download = data.fileName;
+        dlBtn.className = 'btn-download'; dlBtn.style.marginLeft = 'auto'; dlBtn.textContent = '\u2b07\ufe0f Завантажити';
+        box.appendChild(iconDiv); box.appendChild(infoDiv); box.appendChild(dlBtn);
+        content.innerHTML = ''; content.appendChild(box);
       }
       document.getElementById('decResult').classList.add('show');
       document.getElementById('decResult').scrollIntoView({behavior:'smooth'});
@@ -490,7 +566,7 @@
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
-  function fileIcon(name) {
+  function getFileIcon(name) {
     if(!name)return '📄'; const ext=name.split('.').pop().toLowerCase();
     const m={jpg:'🖼',jpeg:'🖼',png:'🖼',gif:'🖼',webp:'🖼',pdf:'📕',doc:'📘',docx:'📘',
              xls:'📗',xlsx:'📗',txt:'📄',zip:'🗜',mp4:'🎬',mp3:'🎵'};

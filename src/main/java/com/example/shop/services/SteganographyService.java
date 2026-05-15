@@ -59,14 +59,15 @@ public class SteganographyService {
     private static final String AES_ALGO        = "AES/CBC/PKCS5Padding";
     private static final String LSB_END_MARKER  = "<<STEGO_END>>";
     // Imagen 3 — stable image generation
+    // imagen-3.0-generate-002 — via v1 (not v1beta)
     private static final String GEMINI_IMAGEN_URL =
-            "https://generativelanguage.googleapis.com/v1beta/models/" +
+            "https://generativelanguage.googleapis.com/v1/models/" +
                     "imagen-3.0-generate-002:predict?key=";
 
-    // gemini-2.0-flash-exp — fallback multimodal image output
+    // gemini-2.0-flash-preview-image-generation — confirmed working 2026
     private static final String GEMINI_FLASH_URL =
             "https://generativelanguage.googleapis.com/v1beta/models/" +
-                    "gemini-2.0-flash-exp:generateContent?key=";
+                    "gemini-2.0-flash-preview-image-generation:generateContent?key=";
 
     // ═════════════════════════════════════════════════════════════════════
     //  ENCRYPT  — returns { stegoImageBase64, key, expiresIn, mimeType }
@@ -82,7 +83,8 @@ public class SteganographyService {
             String payloadText,
             byte[] fileBytes,
             String fileName,
-            String imageTheme) throws Exception {
+            String imageTheme,
+            byte[] userCoverBytes) throws Exception {
 
         // 1. Build payload string: for files, base64-encode bytes with header
         String payload;
@@ -113,8 +115,24 @@ public class SteganographyService {
         String ciphertextB64 = Base64.getEncoder().encodeToString(packed);
         String toEmbed = ciphertextB64 + LSB_END_MARKER;
 
-        // 3. Generate cover image via Gemini
-        byte[] coverPng = generateCoverImage(imageTheme, isFile, fileName);
+        // 3. Use user-provided cover image OR generate one
+        byte[] coverPng;
+        if (userCoverBytes != null && userCoverBytes.length > 0) {
+            // Convert to PNG if needed
+            try {
+                java.awt.image.BufferedImage uploaded = ImageIO.read(new ByteArrayInputStream(userCoverBytes));
+                if (uploaded == null) throw new IllegalArgumentException("Invalid cover image");
+                ByteArrayOutputStream pngOut = new ByteArrayOutputStream();
+                ImageIO.write(uploaded, "PNG", pngOut);
+                coverPng = pngOut.toByteArray();
+                log.info("Using user-provided cover image ({}x{})", uploaded.getWidth(), uploaded.getHeight());
+            } catch (Exception ex) {
+                log.warn("Could not read user cover image: {}, using generated", ex.getMessage());
+                coverPng = generateCoverImage(imageTheme, isFile, fileName);
+            }
+        } else {
+            coverPng = generateCoverImage(imageTheme, isFile, fileName);
+        }
 
         // 4. LSB-embed the ciphertext into the image
         byte[] stegoPng = lsbEmbed(coverPng, toEmbed);
@@ -212,94 +230,56 @@ public class SteganographyService {
     //  Gemini image generation
     // ═════════════════════════════════════════════════════════════════════
 
-    private byte[] generateCoverImage(String theme, boolean isFile, String fileName) {
-        String prompt = buildImagePrompt(theme, isFile, fileName);
 
-        // ── Attempt 1: Imagen 3 (predict API) ──────────────────────────────
-        try {
-            Map<String, Object> requestBody = Map.of(
-                    "instances",  List.of(Map.of("prompt", prompt)),
-                    "parameters", Map.of(
-                            "sampleCount",       1,
-                            "aspectRatio",       "4:3",
-                            "safetyFilterLevel", "block_few",
-                            "personGeneration",  "allow_adult"
-                    )
-            );
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            ResponseEntity<String> resp = restTemplate.postForEntity(
-                    GEMINI_IMAGEN_URL + apiKey,
-                    new HttpEntity<>(requestBody, headers), String.class);
-            JsonNode root = objectMapper.readTree(resp.getBody());
-            JsonNode preds = root.path("predictions");
-            if (preds.isArray() && preds.size() > 0) {
-                String b64 = preds.get(0).path("bytesBase64Encoded").asText("");
-                if (!b64.isBlank()) {
-                    log.info("Imagen 3 generated cover image OK");
-                    return Base64.getDecoder().decode(b64);
-                }
-            }
-            log.warn("Imagen 3 returned no predictions: {}", root);
-        } catch (Exception e) {
-            log.warn("Imagen 3 failed: {}", e.getMessage());
-        }
-
-        // ── Attempt 2: gemini-2.0-flash-exp multimodal ────────────────────
-        try {
-            Map<String, Object> requestBody = Map.of(
-                    "contents", List.of(Map.of(
-                            "parts", List.of(Map.of("text",
-                                    "Create a beautiful, highly detailed, vivid photorealistic image of: " + prompt +
-                                            ". High quality, artistic, colorful, sharp focus, 4K.")))),
-                    "generationConfig", Map.of(
-                            "responseModalities", List.of("IMAGE"),
-                            "temperature", 1.0
-                    )
-            );
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            ResponseEntity<String> resp = restTemplate.postForEntity(
-                    GEMINI_FLASH_URL + apiKey,
-                    new HttpEntity<>(requestBody, headers), String.class);
-            JsonNode root = objectMapper.readTree(resp.getBody());
-            JsonNode parts = root.path("candidates").get(0).path("content").path("parts");
-            for (JsonNode part : parts) {
-                if (part.has("inlineData")) {
-                    String b64 = part.path("inlineData").path("data").asText("");
-                    if (!b64.isBlank()) {
-                        log.info("gemini-flash generated cover image OK");
-                        return Base64.getDecoder().decode(b64);
-                    }
-                }
-            }
-            log.warn("gemini-flash returned no image; raw: {}", root.toString().substring(0, Math.min(300, root.toString().length())));
-        } catch (Exception e) {
-            log.warn("gemini-flash failed: {}", e.getMessage());
-        }
-
-        // ── Fallback: rich Java2D generative art ──────────────────────────
-        log.info("Using Java2D art fallback for theme: {}", theme);
-        return generateFallbackImage(theme);
-    }
-
-    private String buildImagePrompt(String theme, boolean isFile, String fileName) {
-        if (theme != null && !theme.isBlank()) return theme;
-        if (isFile && fileName != null) {
-            String ext = fileName.contains(".") ? fileName.substring(fileName.lastIndexOf('.')+1).toLowerCase() : "";
-            return switch (ext) {
-                case "jpg","jpeg","png","gif","webp" -> "A beautiful abstract art piece with vibrant colors, digital art style";
-                case "pdf","doc","docx"              -> "An elegant library interior with warm lighting, books and wooden shelves";
-                default -> "A serene mountain landscape at golden hour, photorealistic";
-            };
-        }
-        return "A peaceful forest path in autumn, sunlight filtering through leaves, photorealistic";
+    private byte[] generateCoverImage(String rawStyle, boolean isFile, String fileName) {
+        // Map frontend style name → Java2D art keyword via buildImagePrompt
+        String artStyle = buildImagePrompt(rawStyle, isFile, fileName);
+        log.info("Generating Java2D art: rawStyle='{}' -> artStyle='{}'", rawStyle, artStyle);
+        return generateFallbackImage(artStyle);
     }
 
     /**
-     * Rich theme-aware generative art — keyword matched from the full prompt string.
-     * Never shows a plain blue gradient; always produces something visually interesting.
+     * Maps style name from frontend chip to Java2D art style keyword.
+     * Empty/null → random rotation through all styles.
      */
+    private String buildImagePrompt(String style, boolean isFile, String fileName) {
+        // Known artistic styles from the frontend chips
+        String[] allStyles = {"cyberpunk","impressionism","watercolor","glitch","vaporwave",
+                "oilpainting","ukiyoe","noir","surrealism","pixelart",
+                "ocean","sunset","forest","sakura","plasma"};
+        if (style == null || style.isBlank()) {
+            // Truly random — different index every call via nanoTime
+            return allStyles[(int)(Math.abs(System.nanoTime()) % allStyles.length)];
+        }
+        String s = style.toLowerCase().trim();
+        // Direct style match
+        return switch (s) {
+            case "cyberpunk"     -> "cyberpunk";
+            case "impressionism" -> "impressionism";
+            case "watercolor"    -> "watercolor";
+            case "glitch"        -> "glitch";
+            case "vaporwave"     -> "vaporwave";
+            case "oilpainting"   -> "oilpainting";
+            case "ukiyoe"        -> "ukiyoe";
+            case "noir"          -> "noir";
+            case "surrealism"    -> "surrealism";
+            case "pixelart"      -> "pixelart";
+            // legacy / fallback
+            case "ocean","beach","sea"           -> "ocean";
+            case "forest","autumn","tree"        -> "forest";
+            case "sunset","sunrise"              -> "sunset";
+            case "sakura","cherry","blossom"     -> "sakura";
+            case "mountain","snow"               -> "mountain";
+            case "city","street","urban"         -> "city";
+            case "neon","abstract","digital"     -> "neon";
+            default -> {
+                // custom text — hash it to a deterministic style + use nanoTime for variation
+                int idx = (int)(Math.abs(s.hashCode() ^ System.nanoTime()) % allStyles.length);
+                yield allStyles[idx];
+            }
+        };
+    }
+
     private byte[] generateFallbackImage(String theme) {
         int w = 800, h = 600;
         BufferedImage img  = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
@@ -309,17 +289,36 @@ public class SteganographyService {
         g2.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING,
                 java.awt.RenderingHints.VALUE_RENDER_QUALITY);
 
-        String t = theme != null ? theme.toLowerCase() : "";
-        SecureRandom rnd = new SecureRandom();
+        // Use nanoTime as seed — guaranteed unique per call
+        long nano = System.nanoTime();
+        SecureRandom rnd = new SecureRandom(
+                java.nio.ByteBuffer.allocate(8).putLong(nano).array());
 
-        if      (t.contains("ocean") || t.contains("beach") || t.contains("sea"))  drawOcean(img,g2,w,h,rnd);
-        else if (t.contains("sunset") || t.contains("sunrise") || t.contains("dawn")) drawSunset(img,g2,w,h,rnd);
-        else if (t.contains("forest") || t.contains("tree") || t.contains("autumn")) drawForest(img,g2,w,h,rnd);
-        else if (t.contains("mountain") || t.contains("snow") || t.contains("peak")) drawMountain(img,g2,w,h,rnd);
-        else if (t.contains("city") || t.contains("street") || t.contains("urban")) drawCity(img,g2,w,h,rnd);
-        else if (t.contains("abstract") || t.contains("neon") || t.contains("digital")) drawNeon(img,g2,w,h,rnd);
-        else if (t.contains("cherry") || t.contains("blossom") || t.contains("sakura")) drawSakura(img,g2,w,h,rnd);
-        else drawPlasma(img,g2,w,h,rnd);  // default: flowing plasma
+        // artStyle is a resolved keyword from buildImagePrompt (never empty here)
+        String t = (theme != null && !theme.isBlank()) ? theme.toLowerCase().trim() : "plasma";
+        // unused legacy var — keep compiler happy
+        int autoVariant = (int)(nano % 8);
+
+        switch (t) {
+            case "cyberpunk"     -> drawCyberpunk(img,g2,w,h,rnd);
+            case "impressionism" -> drawImpressionism(img,g2,w,h,rnd);
+            case "watercolor"    -> drawWatercolor(img,g2,w,h,rnd);
+            case "glitch"        -> drawGlitch(img,g2,w,h,rnd);
+            case "vaporwave"     -> drawVaporwave(img,g2,w,h,rnd);
+            case "oilpainting"   -> drawOilPainting(img,g2,w,h,rnd);
+            case "ukiyoe"        -> drawUkiyoe(img,g2,w,h,rnd);
+            case "noir"          -> drawNoir(img,g2,w,h,rnd);
+            case "surrealism"    -> drawSurrealism(img,g2,w,h,rnd);
+            case "pixelart"      -> drawPixelArt(img,g2,w,h,rnd);
+            case "ocean"         -> drawOcean(img,g2,w,h,rnd);
+            case "sunset"        -> drawSunset(img,g2,w,h,rnd);
+            case "forest"        -> drawForest(img,g2,w,h,rnd);
+            case "mountain"      -> drawMountain(img,g2,w,h,rnd);
+            case "city"          -> drawCity(img,g2,w,h,rnd);
+            case "neon"          -> drawNeon(img,g2,w,h,rnd);
+            case "sakura"        -> drawSakura(img,g2,w,h,rnd);
+            default              -> drawPlasma(img,g2,w,h,rnd);
+        }
 
         g2.dispose();
         try {
@@ -327,6 +326,207 @@ public class SteganographyService {
             ImageIO.write(img, "PNG", out);
             return out.toByteArray();
         } catch (Exception e) { throw new RuntimeException(e); }
+    }
+
+
+    // ── Cyberpunk: dark city + neon signs + rain ─────────────────────
+    private void drawCyberpunk(BufferedImage img, java.awt.Graphics2D g2, int w, int h, SecureRandom rnd) {
+        // Sky gradient
+        int cpHue=rnd.nextInt(40);for(int y=0;y<h;y++){float t=(float)y/h;g2.setColor(new java.awt.Color(Math.clamp((int)(5+t*8+cpHue/4),0,255),(int)(0+t*5),(Math.clamp((int)(20+t*30+cpHue),0,255))));g2.drawLine(0,y,w,y);}
+        // Buildings silhouette
+        for(int i=0;i<28;i++){int bx=rnd.nextInt(w+60)-30,bw=14+rnd.nextInt(50),bh=80+rnd.nextInt(260),br=8+rnd.nextInt(20),bg=5+rnd.nextInt(15);
+            g2.setColor(new java.awt.Color(br,bg,br+10));g2.fillRect(bx,h-bh,bw,bh);
+            for(int wx=bx+2;wx<bx+bw-3;wx+=7) for(int wy=h-bh+4;wy<h-5;wy+=9){
+                if(rnd.nextInt(4)!=0){boolean mg=rnd.nextInt(3)==0;
+                    g2.setColor(mg?new java.awt.Color(255,0,200,90+rnd.nextInt(100)):new java.awt.Color(0,200,255,90+rnd.nextInt(100)));
+                    g2.fillRect(wx,wy,4,6);}}}
+        // Neon signs
+        int[][] signs={{w/4,h/3,255,20,180},{w*2/3,h/4,20,230,255},{w/2,h*2/5,255,100,0}};
+        for(int[] s:signs){for(int r=40;r>0;r-=5){float a=(1f-(float)r/40)*.35f;
+            g2.setColor(new java.awt.Color(s[2],s[3],s[4],(int)(a*255)));g2.fillOval(s[0]-r,s[1]-r/2,r*2,r);}}
+        // Rain
+        g2.setStroke(new java.awt.BasicStroke(.8f));
+        for(int i=0;i<200;i++){int rx=rnd.nextInt(w),ry=rnd.nextInt(h),rl=5+rnd.nextInt(12);
+            g2.setColor(new java.awt.Color(80,160,255,15+rnd.nextInt(35)));g2.drawLine(rx,ry,rx+2,ry+rl);}
+        // Horizontal light bleed on ground
+        for(int y=(int)(h*.75);y<h;y++){float t=((float)y-h*.75f)/(h*.25f);
+            g2.setColor(new java.awt.Color(255,0,200,(int)(18*(1-t))));g2.drawLine(0,y,w/2,y);
+            g2.setColor(new java.awt.Color(0,200,255,(int)(18*(1-t))));g2.drawLine(w/2,y,w,y);}
+    }
+
+    // ── Impressionism: thick brushstrokes, pastel fields ─────────────
+    private void drawImpressionism(BufferedImage img, java.awt.Graphics2D g2, int w, int h, SecureRandom rnd) {
+        // Sky wash
+        for(int y=0;y<h;y++){float t=(float)y/h;g2.setColor(new java.awt.Color((int)(135+t*60),(int)(185+t*30),(int)(220-t*60)));g2.drawLine(0,y,w,y);}
+        // Brushstrokes — thick ellipses at angles
+        for(int i=0;i<380;i++){int bx=rnd.nextInt(w),by=rnd.nextInt(h),bw=12+rnd.nextInt(38),bh=4+rnd.nextInt(10);
+            double angle=rnd.nextDouble()*Math.PI;
+            float t=(float)by/h;
+            int[] palette = t<.45f ? new int[]{80+rnd.nextInt(120),140+rnd.nextInt(80),180+rnd.nextInt(70)}
+                    : new int[]{60+rnd.nextInt(100),110+rnd.nextInt(90),30+rnd.nextInt(80)};
+            g2.setColor(new java.awt.Color(Math.min(255,palette[0]),Math.min(255,palette[1]),Math.min(255,palette[2]),120+rnd.nextInt(100)));
+            java.awt.geom.AffineTransform at=g2.getTransform();g2.rotate(angle,bx,by);g2.fillOval(bx-bw/2,by-bh/2,bw,bh);g2.setTransform(at);}
+        // Sun blob
+        for(int r=55;r>0;r-=4){g2.setColor(new java.awt.Color(255,230,100,(int)((1f-(float)r/55)*180)));g2.fillOval(w/4-r,h/5-r,r*2,r*2);}
+    }
+
+    // ── Watercolor: soft bleeds + paper texture ───────────────────────
+    private void drawWatercolor(BufferedImage img, java.awt.Graphics2D g2, int w, int h, SecureRandom rnd) {
+        g2.setColor(new java.awt.Color(248,244,238));g2.fillRect(0,0,w,h);
+        int[][] palette={{180,80,100},{80,140,200},{120,180,80},{200,130,60},{100,80,160}};
+        for(int i=0;i<12;i++){int[]c=palette[rnd.nextInt(palette.length)];int cx=rnd.nextInt(w),cy=rnd.nextInt(h),cr=80+rnd.nextInt(160);
+            for(int r=cr;r>0;r-=6){float a=(float)r/cr*.28f;
+                g2.setColor(new java.awt.Color(c[0],c[1],c[2],(int)(a*255)));
+                g2.fillOval(cx-r+rnd.nextInt(20)-10,cy-r+rnd.nextInt(20)-10,r*2,r*2);}}
+        // Paper grain
+        for(int y=0;y<h;y++) for(int x=0;x<w;x++) if(rnd.nextInt(8)==0){
+            int px=img.getRGB(x,y);int v=rnd.nextInt(18)-9;
+            int r2=Math.clamp(((px>>16)&0xFF)+v,0,255),g2c=Math.clamp(((px>>8)&0xFF)+v,0,255),b2=Math.clamp((px&0xFF)+v,0,255);
+            img.setRGB(x,y,(0xFF<<24)|(r2<<16)|(g2c<<8)|b2);}
+    }
+
+    // ── Glitch Art: corrupted scanlines + color shifts ────────────────
+    private void drawGlitch(BufferedImage img, java.awt.Graphics2D g2, int w, int h, SecureRandom rnd) {
+        // Base gradient
+        int glHue=rnd.nextInt(60);for(int y=0;y<h;y++){float t=(float)y/h;g2.setColor(new java.awt.Color(Math.clamp((int)(20+t*40+glHue/3),0,255),0,Math.clamp((int)(60+t*100+glHue),0,255)));g2.drawLine(0,y,w,y);}
+        // Glitch blocks — horizontal slices shifted
+        for(int i=0;i<60;i++){int gy=rnd.nextInt(h),gh=1+rnd.nextInt(8),gshift=rnd.nextInt(80)-40;
+            for(int row=gy;row<Math.min(h,gy+gh);row++){
+                for(int x=0;x<w;x++){int srcX=Math.clamp(x+gshift,0,w-1);img.setRGB(x,row,img.getRGB(srcX,row));}}}
+        // RGB channel split blocks
+        for(int i=0;i<20;i++){int bx=rnd.nextInt(w),by=rnd.nextInt(h),bw2=20+rnd.nextInt(120),bh2=2+rnd.nextInt(15);
+            g2.setColor(new java.awt.Color(255,0,80,60+rnd.nextInt(80)));g2.fillRect(bx-4,by,bw2,bh2);
+            g2.setColor(new java.awt.Color(0,255,200,60+rnd.nextInt(80)));g2.fillRect(bx+4,by,bw2,bh2);}
+        // Scanlines
+        for(int y=0;y<h;y+=3){g2.setColor(new java.awt.Color(0,0,0,40));g2.drawLine(0,y,w,y);}
+        // White noise flashes
+        for(int i=0;i<300;i++){int nx=rnd.nextInt(w),ny=rnd.nextInt(h);
+            g2.setColor(new java.awt.Color(255,255,255,rnd.nextInt(100)));g2.fillRect(nx,ny,rnd.nextInt(4)+1,1);}
+    }
+
+    // ── Vaporwave: pink/purple grid + sun + chrome text vibes ─────────
+    private void drawVaporwave(BufferedImage img, java.awt.Graphics2D g2, int w, int h, SecureRandom rnd) {
+        int vpHue=rnd.nextInt(50)-25;for(int y=0;y<h;y++){float t=(float)y/h;g2.setColor(new java.awt.Color(Math.clamp((int)(20+t*40+vpHue),0,255),Math.clamp((int)(0+t*10+vpHue/2),0,255),Math.clamp((int)(60+t*80),0,255)));g2.drawLine(0,y,w,y);}
+        // Retro sun
+        int sx=w/2,sy=(int)(h*.42);
+        int[][] sunGrad={{255,50,150},{255,100,180},{255,150,200},{255,200,220}};
+        for(int i=0;i<sunGrad.length;i++){int r=80-i*18;
+            g2.setColor(new java.awt.Color(sunGrad[i][0],sunGrad[i][1],sunGrad[i][2]));
+            g2.fillOval(sx-r,sy-r/2,r*2,r);}
+        // Horizontal stripes on sun
+        for(int i=1;i<6;i++){int sy2=sy-30+i*10;
+            g2.setColor(new java.awt.Color(20,0,60,200));g2.fillRect(sx-82,sy2,164,4);}
+        // Grid floor
+        int gy=(int)(h*.45);
+        g2.setColor(new java.awt.Color(200,50,255,80));
+        for(int x=-w;x<w*2;x+=30)g2.drawLine(x,gy,(int)(w/2+(x-w/2)*.3f),h);
+        for(int y=gy;y<h;y+=20){float t=(float)(y-gy)/(h-gy);g2.drawLine(0,y,w,y);}
+        // Stars
+        for(int i=0;i<120;i++){int sx2=rnd.nextInt(w),sy2=rnd.nextInt(gy);int br=180+rnd.nextInt(75);
+            g2.setColor(new java.awt.Color(br,br,Math.min(255,br+30),rnd.nextInt(200)+55));g2.fillOval(sx2,sy2,2,2);}
+    }
+
+    // ── Oil Painting: thick impasto, rich colors ──────────────────────
+    private void drawOilPainting(BufferedImage img, java.awt.Graphics2D g2, int w, int h, SecureRandom rnd) {
+        // Rich dark background
+        for(int y=0;y<h;y++){float t=(float)y/h;g2.setColor(new java.awt.Color((int)(30+t*50),(int)(20+t*40),(int)(10+t*30)));g2.drawLine(0,y,w,y);}
+        // Thick impasto strokes
+        int[][] oils={{180,60,20},{220,140,30},{80,120,40},{30,70,140},{160,40,100},{200,160,80}};
+        for(int i=0;i<500;i++){int[]c=oils[rnd.nextInt(oils.length)];int bx=rnd.nextInt(w),by=rnd.nextInt(h);
+            int sw=8+rnd.nextInt(35),sh=3+rnd.nextInt(8);double angle=rnd.nextDouble()*Math.PI;
+            g2.setColor(new java.awt.Color(Math.min(255,c[0]+rnd.nextInt(40)-20),Math.min(255,c[1]+rnd.nextInt(40)-20),Math.min(255,c[2]+rnd.nextInt(40)-20),140+rnd.nextInt(90)));
+            java.awt.geom.AffineTransform at=g2.getTransform();g2.rotate(angle,bx,by);
+            g2.fillRoundRect(bx-sw/2,by-sh/2,sw,sh,sh/2,sh/2);g2.setTransform(at);}
+        // Varnish gloss highlights
+        for(int i=0;i<30;i++){int hx=rnd.nextInt(w),hy=rnd.nextInt(h),hr=3+rnd.nextInt(12);
+            g2.setColor(new java.awt.Color(255,255,240,20+rnd.nextInt(60)));g2.fillOval(hx,hy,hr,hr/2);}
+    }
+
+    // ── Ukiyo-e: flat color blocks + wave patterns ────────────────────
+    private void drawUkiyoe(BufferedImage img, java.awt.Graphics2D g2, int w, int h, SecureRandom rnd) {
+        g2.setColor(new java.awt.Color(240,230,200));g2.fillRect(0,0,w,h);
+        // Sky bands
+        int[][] sky={{180,210,230},{150,190,215},{120,170,205}};
+        for(int i=0;i<sky.length;i++){g2.setColor(new java.awt.Color(sky[i][0],sky[i][1],sky[i][2]));g2.fillRect(0,i*(h/4),w,h/4+2);}
+        // Mountain
+        g2.setColor(new java.awt.Color(80,50,60));
+        g2.fillPolygon(new int[]{w/4,w/2,3*w/4},new int[]{h/2,h/5,h/2},3);
+        g2.setColor(new java.awt.Color(240,240,255));
+        g2.fillPolygon(new int[]{(int)(w*.38),(int)(w*.5),(int)(w*.62)},new int[]{(int)(h*.3),(int)(h*.2),(int)(h*.3)},3);
+        // Wave pattern at bottom
+        g2.setColor(new java.awt.Color(30,80,160));g2.fillRect(0,(int)(h*.65),w,(int)(h*.35));
+        g2.setStroke(new java.awt.BasicStroke(2));
+        for(int wy=(int)(h*.65);wy<h;wy+=18){g2.setColor(new java.awt.Color(255,255,255,100));
+            for(int x=0;x<w;x+=40){g2.drawArc(x,wy,40,14,0,180);}}
+        // Border
+        g2.setColor(new java.awt.Color(80,50,40));g2.setStroke(new java.awt.BasicStroke(6));g2.drawRect(8,8,w-16,h-16);
+    }
+
+    // ── Film Noir: high contrast B&W + shadows ────────────────────────
+    private void drawNoir(BufferedImage img, java.awt.Graphics2D g2, int w, int h, SecureRandom rnd) {
+        g2.setColor(new java.awt.Color(10,10,10));g2.fillRect(0,0,w,h);
+        // Street light cone
+        int lx=rnd.nextInt(w/2)+w/4;
+        for(int r=280;r>0;r-=8){float a=(1f-(float)r/280)*.18f;g2.setColor(new java.awt.Color(220,200,160,(int)(a*255)));g2.fillOval(lx-r,0-r/2,r*2,r*2);}
+        // Rain streaks
+        for(int i=0;i<300;i++){int rx=rnd.nextInt(w),ry=rnd.nextInt(h),rl=8+rnd.nextInt(20);
+            g2.setColor(new java.awt.Color(120,120,140,15+rnd.nextInt(30)));g2.setStroke(new java.awt.BasicStroke(.8f));g2.drawLine(rx,ry,rx+3,ry+rl);}
+        // Building silhouettes
+        for(int i=0;i<15;i++){int bx=rnd.nextInt(w+40)-20,bw2=20+rnd.nextInt(60),bh2=100+rnd.nextInt(200);
+            g2.setColor(new java.awt.Color(8+rnd.nextInt(12),8+rnd.nextInt(12),8+rnd.nextInt(12)));g2.fillRect(bx,h-bh2,bw2,bh2);
+            for(int wx=bx+4;wx<bx+bw2-4;wx+=9) for(int wy=h-bh2+6;wy<h-6;wy+=12){
+                if(rnd.nextInt(5)==0){g2.setColor(new java.awt.Color(200,180,100,80+rnd.nextInt(80)));g2.fillRect(wx,wy,4,5);}}}
+        // Puddle reflection
+        for(int y=(int)(h*.8);y<h;y++){float t=((float)y-h*.8f)/(h*.2f);g2.setColor(new java.awt.Color(220,200,160,(int)(12*(1-t))));g2.drawLine(0,y,w,y);}
+        // Vignette
+        for(int r=Math.max(w,h);r>50;r-=15){float a=(float)r/Math.max(w,h);g2.setColor(new java.awt.Color(0,0,0,(int)((1-a)*80)));g2.drawOval(w/2-r,h/2-r,r*2,r*2);}
+    }
+
+    // ── Surrealism: floating objects + impossible geometry ────────────
+    private void drawSurrealism(BufferedImage img, java.awt.Graphics2D g2, int w, int h, SecureRandom rnd) {
+        // Split sky/ground
+        for(int y=0;y<h/2;y++){float t=(float)y/(h/2);g2.setColor(new java.awt.Color((int)(255-t*100),(int)(220-t*120),(int)(180-t*60)));g2.drawLine(0,y,w,y);}
+        for(int y=h/2;y<h;y++){float t=(float)(y-h/2)/(h/2);g2.setColor(new java.awt.Color((int)(40+t*20),(int)(90+t*40),(int)(50+t*20)));g2.drawLine(0,y,w,y);}
+        // Horizon line
+        g2.setColor(new java.awt.Color(80,50,30));g2.setStroke(new java.awt.BasicStroke(2));g2.drawLine(0,h/2,w,h/2);
+        // Floating spheres
+        for(int i=0;i<6;i++){int sx=50+rnd.nextInt(w-100),sy=50+rnd.nextInt(h/2-80),sr=18+rnd.nextInt(55);
+            int[] clr={rnd.nextInt(200)+55,rnd.nextInt(200)+55,rnd.nextInt(200)+55};
+            g2.setColor(new java.awt.Color(clr[0],clr[1],clr[2]));g2.fillOval(sx-sr,sy-sr,sr*2,sr*2);
+            g2.setColor(new java.awt.Color(255,255,255,80));g2.fillOval(sx-sr/3,sy-sr/2,sr/3,sr/3);
+            // Shadow under sphere
+            g2.setColor(new java.awt.Color(0,0,0,40));g2.fillOval(sx-sr,h/2,sr*2,10);}
+        // Melting clock (simplified — wavy rectangle)
+        g2.setColor(new java.awt.Color(220,190,140));
+        int cx=w/3,cy=h/2;java.awt.geom.GeneralPath gp=new java.awt.geom.GeneralPath();
+        gp.moveTo(cx,cy);gp.curveTo(cx+40,cy-10,cx+80,cy+30,cx+90,cy+70);
+        gp.lineTo(cx+70,cy+80);gp.curveTo(cx+60,cy+40,cx+20,cy+10,cx,cy+20);gp.closePath();
+        g2.fill(gp);g2.setColor(new java.awt.Color(80,60,40));g2.setStroke(new java.awt.BasicStroke(1.5f));g2.draw(gp);
+    }
+
+    // ── Pixel Art: chunky 8×8 blocks ─────────────────────────────────
+    private void drawPixelArt(BufferedImage img, java.awt.Graphics2D g2, int w, int h, SecureRandom rnd) {
+        int ps=8; // pixel size
+        int[][] palette={{20,12,28},{68,36,52},{48,52,109},{78,74,78},{133,76,48},{52,101,36},
+                {208,70,72},{218,212,94},{109,170,44},{210,125,44},{218,212,94},{20,12,28}};
+        // Sky
+        for(int y=0;y<h/2;y+=ps) for(int x=0;x<w;x+=ps){g2.setColor(new java.awt.Color(48,52,109));g2.fillRect(x,y,ps,ps);}
+        // Ground
+        for(int y=h/2;y<h;y+=ps) for(int x=0;x<w;x+=ps){g2.setColor(new java.awt.Color(52,101,36));g2.fillRect(x,y,ps,ps);}
+        // Stars
+        for(int i=0;i<40;i++){int sx=rnd.nextInt(w/ps)*ps,sy=rnd.nextInt(h/2/ps)*ps;g2.setColor(new java.awt.Color(218,212,94));g2.fillRect(sx,sy,ps,ps);}
+        // Mountains
+        for(int i=0;i<4;i++){int mx=rnd.nextInt(w),mh=4+rnd.nextInt(10);
+            for(int row=0;row<mh;row++) for(int col=-row;col<=row;col++){
+                int px=(mx+col*ps)/ps*ps,py=(h/2-row*ps)/ps*ps;if(px>=0&&px<w&&py>=0&&py<h){g2.setColor(new java.awt.Color(78,74,78));g2.fillRect(px,py,ps,ps);}}}
+        // Trees
+        for(int i=0;i<8;i++){int tx=rnd.nextInt(w/ps)*ps,ty=h/2-4*ps;
+            g2.setColor(new java.awt.Color(20,12,28));g2.fillRect(tx,ty+2*ps,ps,2*ps);
+            g2.setColor(new java.awt.Color(52,101,36));for(int r=-2;r<=2;r++) for(int c=-2;c<=2;c++) if(Math.abs(r)+Math.abs(c)<=3) g2.fillRect(tx+c*ps,ty+r*ps,ps,ps);}
+        // Grid lines for pixel effect
+        g2.setColor(new java.awt.Color(0,0,0,20));
+        for(int x=0;x<w;x+=ps)g2.drawLine(x,0,x,h);
+        for(int y=0;y<h;y+=ps)g2.drawLine(0,y,w,y);
     }
 
     // ── Ocean: aurora bands + bokeh + light rays ──────────────────────

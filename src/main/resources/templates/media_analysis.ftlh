@@ -254,9 +254,15 @@
     document.getElementById('icoFake').textContent = fk.detected ? '🚨' : '✅';
     document.getElementById('icoProp').textContent = pr.detected ? '🚨' : '✅';
 
-    document.getElementById('expAi').textContent   = ai.explanation  || '—';
-    document.getElementById('expFake').textContent = fk.explanation  || '—';
-    document.getElementById('expProp').textContent = pr.explanation  || '—';
+    // Use innerHTML so long explanations wrap properly
+    function setExp(id, val) {
+      const el = document.getElementById(id);
+      el.textContent = val || '—';
+      el.style.display = 'block';
+    }
+    setExp('expAi',   ai.explanation);
+    setExp('expFake', fk.explanation);
+    setExp('expProp', pr.explanation);
 
     const tWrap = document.getElementById('techniques');
     tWrap.innerHTML = '';
