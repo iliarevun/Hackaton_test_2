@@ -30,7 +30,11 @@ public class SecurityConfig {
                                 "/avatars/**", "/images/**", "/img/**",
                                 "/setup", "/leaderboard", "/report", "/challenges", "/games", "/game/muscles", "/game/trainer", "/game/zones",
                                 "/marketplace", "/exchange", "/repair", "/referal", "/reuse",
-                                "/payment/result", "/user/**"
+                                "/payment/result", "/user/**",
+                                "/media-analysis", "/media-analysis/**",
+                                "/query-proxy", "/query-proxy/**",
+                                "/steganography", "/steganography/**",
+                                "/biometrics", "/biometrics/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -60,9 +64,13 @@ public class SecurityConfig {
                         "/api/challenges/send",
                         "/api/challenges/*/accept",
                         "/api/challenges/*/decline",
-                        "/api/challenges/*/progress"
-                ,
-                        "/report/ai-insight"
+                        "/api/challenges/*/progress",
+                        "/report/ai-insight",
+                        // Ecosystem modules
+                        "/media-analysis/analyze", "/media-analysis/upload",
+                        "/query-proxy/ask", "/query-proxy/sanitize",
+                        "/steganography/encrypt", "/steganography/decrypt",
+                        "/biometrics/analyze", "/biometrics/enroll", "/biometrics/verify"
                 ));
         return http.build();
     }

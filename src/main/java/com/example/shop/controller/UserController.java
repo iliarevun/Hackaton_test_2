@@ -9,9 +9,6 @@ import com.example.shop.repositories.AvatarRepository;
 import com.example.shop.repositories.UserRepository;
 import com.example.shop.services.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,7 +19,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.Principal;
-import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -66,16 +62,8 @@ public class UserController {
             return "registration";
         }
         ConfirmationToken confirmationToken = confirmationTokenService.getConfirmationToken(user.getId());
-        //String link = "https://robotcoffees.com/confirm?token=" + confirmationToken.getToken();
-        //String link = "http://localhost:1799/confirm?token=" + confirmationToken.getToken();
-        String link = "https://hackathon-test-g54r.onrender.com/confirm?token=" + confirmationToken.getToken();
+         String link = "https://hackathon-test-g54r.onrender.com/confirm?token=" + confirmationToken.getToken();
 
-//        if(activationMethod.equals("email")){
-//        emailSender.send(user.getEmail(), buildEmail(user.getName(), link));
-//        }
-//        else if(activationMethod.equals("phoneNumber")){
-//            smsService.send(user.getPhoneNumber(), user.getName(), link);
-//        }
 
         String confirmMessage = "An email has been sent to your email address. " +
                 "Follow the link in the email to confirm your email address.";
@@ -151,145 +139,6 @@ public class UserController {
         model.addAttribute("advertTypes", AdvertType.values());
         return "profile";
     }
-
-
-    @GetMapping("/marketplace")
-    public String toMarketplace(Model model, Principal principal, Authentication authentication, User user,
-                                @ModelAttribute("payment_message") String paymentMessage) {
-
-        if (paymentMessage != null && !paymentMessage.isEmpty()) {
-            model.addAttribute("payment_message", paymentMessage);
-        }
-
-        if (authentication != null) {
-            if (authentication instanceof OAuth2AuthenticationToken token) {
-                user = userService.getUserByEmail(token.getPrincipal().getAttribute("email"));
-                user.setCoins(BigDecimal.valueOf(user.getCoins())
-                        .setScale(1, RoundingMode.HALF_UP)
-                        .doubleValue());
-
-                model.addAttribute("user", user);
-
-            } else if (authentication instanceof UsernamePasswordAuthenticationToken) {
-                user = userService.findUserByPrincipal(principal.getName());
-
-            user.setCoins(BigDecimal.valueOf(user.getCoins())
-                        .setScale(1, RoundingMode.HALF_UP)
-                        .doubleValue());
-
-                model.addAttribute("user", user);
-
-            }
-
-        }
-
-     //   model.addAttribute("euro_exchange_rate", currencyExchangeService.getEuroToUahRate());
-     //   model.addAttribute("notifications", notificationService.getNotificationsList(user.getId()));
-
-        return "marketplace";
-    }
-
-
-    @GetMapping("/exchange")
-    public String toExchange(Model model, Principal principal, Authentication authentication, User user){
-
-        if (authentication != null) {
-            if (authentication instanceof OAuth2AuthenticationToken token) {
-                user = userService.getUserByEmail(token.getPrincipal().getAttribute("email"));
-                user.setCoins(BigDecimal.valueOf(user.getCoins())
-                        .setScale(1, RoundingMode.HALF_UP)
-                        .doubleValue());
-
-                model.addAttribute("user", user);
-
-            } else if (authentication instanceof UsernamePasswordAuthenticationToken) {
-                user = userService.findUserByPrincipal(principal.getName());
-
-                user.setCoins(BigDecimal.valueOf(user.getCoins())
-                        .setScale(1, RoundingMode.HALF_UP)
-                        .doubleValue());
-
-                model.addAttribute("user", user);
-
-            }
-
-        }
-    //    model.addAttribute("euro_exchange_rate", currencyExchangeService.getEuroToUahRate());
-     //   model.addAttribute("notifications", notificationService.getNotificationsList(user.getId()));
-        return "exchange";
-    }
-
-    @GetMapping("/repair")
-    public String toRepair(Model model, Principal principal, Authentication authentication, User user){
-        if (authentication != null) {
-            if (authentication instanceof OAuth2AuthenticationToken token) {
-                user = userService.getUserByEmail(token.getPrincipal().getAttribute("email"));
-                user.setCoins(BigDecimal.valueOf(user.getCoins())
-                        .setScale(1, RoundingMode.HALF_UP)
-                        .doubleValue());
-
-                model.addAttribute("user", user);
-
-            } else if (authentication instanceof UsernamePasswordAuthenticationToken) {
-                user = userService.findUserByPrincipal(principal.getName());
-
-                user.setCoins(BigDecimal.valueOf(user.getCoins())
-                        .setScale(1, RoundingMode.HALF_UP)
-                        .doubleValue());
-
-                model.addAttribute("user", user);
-
-            }
-
-        }
-    //    model.addAttribute("euro_exchange_rate", currencyExchangeService.getEuroToUahRate());
-    //    model.addAttribute("notifications", notificationService.getNotificationsList(user.getId()));
-        return "repair";
-    }
-
-    @GetMapping("/referal")
-    public String toReferal(Model model, Principal principal, Authentication authentication, User user){
-        if (authentication instanceof OAuth2AuthenticationToken token) {
-            model.addAttribute("user", userService.getUserByEmail(token.getPrincipal().getAttribute("email")));
-        } else if (authentication instanceof UsernamePasswordAuthenticationToken) {
-            model.addAttribute("user", userService.findUserByPrincipal(principal.getName()));
-        }
-   //     model.addAttribute("euro_exchange_rate", currencyExchangeService.getEuroToUahRate());
-        return "referal";
-    }
-
-    @GetMapping("/reuse")
-    public String toReuse(Model model, Principal principal,
-                          Authentication authentication, User user){
-        if (authentication != null) {
-            if (authentication instanceof OAuth2AuthenticationToken token) {
-                user = userService.getUserByEmail(token.getPrincipal().getAttribute("email"));
-                user.setCoins(BigDecimal.valueOf(user.getCoins())
-                        .setScale(1, RoundingMode.HALF_UP)
-                        .doubleValue());
-
-                model.addAttribute("user", user);
-
-            } else if (authentication instanceof UsernamePasswordAuthenticationToken) {
-                user = userService.findUserByPrincipal(principal.getName());
-
-                user.setCoins(BigDecimal.valueOf(user.getCoins())
-                        .setScale(1, RoundingMode.HALF_UP)
-                        .doubleValue());
-
-                model.addAttribute("user", user);
-
-            }
-
-        }
-
-      //  model.addAttribute("euro_exchange_rate", currencyExchangeService.getEuroToUahRate());
-      //  model.addAttribute("notifications", notificationService.getNotificationsList(user.getId()));
-
-        return "reuse";
-    }
-
-
 
 
 

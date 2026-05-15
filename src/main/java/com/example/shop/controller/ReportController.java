@@ -3,11 +3,9 @@ package com.example.shop.controller;
 import com.example.shop.models.User;
 
 import com.example.shop.services.UserService;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Controller;
@@ -16,17 +14,16 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.security.Principal;
-import java.util.*;
 
 @Controller
 @RequiredArgsConstructor
 @Slf4j
 public class ReportController {
 
-    private final UserService           userService;
+    private final UserService userService;
 
-    private final ObjectMapper          objectMapper;
-    private final RestTemplate          restTemplate;
+    private final ObjectMapper objectMapper;
+    private final RestTemplate restTemplate;
 
     private static final String API_KEY = "AIzaSyCd1swjms3HhteTmESxrMYpLvipKfZpN4c";
 
