@@ -51,7 +51,7 @@ public class QueryProxyController {
         String query   = body.getOrDefault("query", "").trim();
         String context = body.getOrDefault("systemContext", "").trim();
 
-        if (query.isBlank()) return Map.of("error", "Запит порожній");
+        if (query.isBlank()) return Map.of("error", "Query is empty");
 
         log.info("QueryProxy request: user={}, queryLength={}",
                 currentUser(principal, auth) != null
@@ -66,7 +66,7 @@ public class QueryProxyController {
     @ResponseBody
     public Map<String, Object> sanitizeOnly(@RequestBody Map<String, String> body) {
         String query = body.getOrDefault("query", "").trim();
-        if (query.isBlank()) return Map.of("error", "Запит порожній");
+        if (query.isBlank()) return Map.of("error", "Query is empty");
 
         QueryProxyService.SanitizedQuery sq = queryProxyService.sanitize(query);
         return Map.of(

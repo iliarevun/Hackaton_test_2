@@ -31,14 +31,14 @@ public class EmailService implements EmailSender {
                     "utf-8");
             mimeMessageHelper.setText(email, true);
             mimeMessageHelper.setTo(emailTo);
-            mimeMessageHelper.setSubject("Дякуємо за реєстрацію в ReUse Hub");
-            mimeMessageHelper.setFrom("ReUseHub1995@gmail.com", "ReUse Hub");
+            mimeMessageHelper.setSubject("Thank you for registering at SecureMind Hub");
+            mimeMessageHelper.setFrom("SecureMindHub1995@gmail.com", "SecureMind Hub");
             javaMailSender.send(mimeMessage);
 
         }
         catch(MessagingException e){
-            LOGGER.error("Не вдалося надіслати email");
-            throw new IllegalStateException("Не вдалося надіслати email");
+            LOGGER.error("Failed to send email");
+            throw new IllegalStateException("Failed to send email");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }

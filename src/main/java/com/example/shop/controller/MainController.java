@@ -60,6 +60,6 @@ public class MainController {
         } catch (Exception e) {
             log.warn("Could not resolve user: {}", e.getMessage());
         }
-        return new User(); // anonymous — порожній об'єкт, не null
+        return new User(); // anonymous — empty object, not null
     }
 }

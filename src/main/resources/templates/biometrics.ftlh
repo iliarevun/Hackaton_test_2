@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>CyberShield — Біометрія</title>
+  <title>SecureMind — Biometrics</title>
   <link rel="stylesheet" href="/game.css">
   <style>
     .bio-hero{background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(59,130,246,.06));border:1px solid rgba(16,185,129,.2);border-radius:var(--r-xl);padding:24px 28px;margin-bottom:22px;}
@@ -100,12 +100,12 @@
 </head>
 <body>
 <header class="gh">
-  <a href="/" class="gh-logo"><div class="logo-gem">⚡</div>CYBER<span>SHIELD</span></a>
+  <a href="/" class="gh-logo"><div class="logo-gem">🛡</div>SECURE<span>MIND</span></a>
   <nav class="gh-nav">
-    <a href="/media-analysis" class="nb">🛡 Медіа</a>
-    <a href="/query-proxy"    class="nb">🔒 Проксі</a>
-    <a href="/steganography"  class="nb">🖼 Stego</a>
-    <a href="/biometrics"     class="nb" style="color:#34d399;">🧬 Біометрія</a>
+    <a href="/media-analysis" class="nb">🛡 Media</a>
+    <a href="/query-proxy" class="nb">🔒 Proxy</a>
+    <a href="/steganography" class="nb">🖼 Steganography</a>
+    <a href="/biometrics" class="nb active-nav">🧬 Biometrics</a>
   </nav>
   <div class="gh-right">
     <form action="/logout" method="post" style="margin:0;">
@@ -121,25 +121,25 @@
     <div class="bio-hero">
       <div class="bio-hero-title">🧬 KEYSTROKE BIOMETRICS</div>
       <div class="bio-hero-desc">
-        Твій ритм набору тексту — унікальний цифровий підпис. Пройди 5 сесій набору одного тексту,
-        система усередняє результати і створює стабільний профіль. Потім можна прив'язати до паролю.
+        Your typing rhythm is a unique digital signature. Complete 5 sessions of typing the same text,
+        the system averages the results and creates a stable profile. You can then link it to your password.
       </div>
     </div>
 
     <div class="tab-row">
-      <button class="tab-btn active" onclick="switchTab('train')">🏋️ Тренування (5 сесій)</button>
-      <button class="tab-btn" onclick="switchTab('verify')">🔐 Верифікація</button>
-      <button class="tab-btn" onclick="switchTab('analyze')">📊 Аналіз</button>
+      <button class="tab-btn active" onclick="switchTab('train')">🏋️ Training (5 sessions)</button>
+      <button class="tab-btn" onclick="switchTab('verify')">🔐 Verification</button>
+      <button class="tab-btn" onclick="switchTab('analyze')">📊 Analysis</button>
     </div>
 
     <!-- ══ TRAIN TAB ══════════════════════════════════════════════════════ -->
     <div id="tab-train" class="tab-panel active">
 
       <div class="seg">
-        <div class="seg-title">Крок 1 — Введи текст 5 разів природньо</div>
+        <div class="seg-title">Step 1 — Type the text naturally 5 times</div>
         <div class="typing-prompt">
-          Надрукуй це речення кожного разу у своєму звичайному темпі:<br>
-          <strong id="trainPrompt" style="color:var(--text-white);">"Кібербезпека починається зі звички"</strong>
+          Type this sentence each time at your normal pace:<br>
+          <strong id="trainPrompt" style="color:var(--text-white);">"Cybersecurity starts with habit"</strong>
         </div>
 
         <!-- Session progress dots -->
@@ -153,81 +153,81 @@
           <div class="session-dot" id="dot3">4</div>
           <div style="flex:1;height:2px;background:var(--border);"></div>
           <div class="session-dot" id="dot4">5</div>
-          <div class="session-label" id="sessionLabel" style="margin-left:10px;">Сесія 1 з 5</div>
+          <div class="session-label" id="sessionLabel" style="margin-left:10px;">Session 1 of 5</div>
         </div>
 
-        <textarea class="typing-box" id="trainInput" placeholder="Почни друкувати тут..."
+        <textarea class="typing-box" id="trainInput" placeholder="Start typing here..."
                   onkeydown="trainKeyDown(event)" onkeyup="trainKeyUp(event)"></textarea>
 
         <div class="stats-grid">
-          <div class="stat-box"><div class="stat-lbl">Клавіш</div><div class="stat-val" id="tCount">0</div></div>
+          <div class="stat-box"><div class="stat-lbl">Keys</div><div class="stat-val" id="tCount">0</div></div>
           <div class="stat-box"><div class="stat-lbl">CPM</div><div class="stat-val" id="tCpm">0</div></div>
           <div class="stat-box"><div class="stat-lbl">Dwell</div><div class="stat-val" id="tDwell">—</div></div>
-          <div class="stat-box"><div class="stat-lbl">Сесії</div><div class="stat-val" id="tSessions" style="color:#34d399;">0/5</div></div>
+          <div class="stat-box"><div class="stat-lbl">Sessions</div><div class="stat-val" id="tSessions" style="color:#34d399;">0/5</div></div>
         </div>
         <div class="prog-wrap"><div class="prog-fill" id="trainProg" style="width:0%"></div></div>
 
         <button class="btn-action" id="btnCapture" onclick="captureSession()" disabled>
-          ✅ ЗАПИСАТИ СЕЮ
+          ✅ RECORD SESSION
         </button>
-        <button class="btn-reset" onclick="resetTraining()">🔄 Скинути всі сесії</button>
+        <button class="btn-reset" onclick="resetTraining()">🔄 Reset all sessions</button>
       </div>
 
       <!-- Average visualization -->
       <div class="avg-card" id="avgCard">
-        <div class="avg-title">📊 Усереднений профіль по сесіях</div>
+        <div class="avg-title">📊 Averaged profile across sessions</div>
         <div id="avgSessions"></div>
         <div class="avg-final">
-          <div class="avg-final-lbl">Середній CPM (5 сесій)</div>
+          <div class="avg-final-lbl">Average CPM (5 sessions)</div>
           <div class="avg-final-val" id="avgCpm">—</div>
         </div>
         <div class="fp-display" style="margin-top:12px;">
-          <div class="fp-lbl">🔑 Поведінковий відбиток</div>
+          <div class="fp-lbl">🔑 Behavioral fingerprint</div>
           <div class="fp-hash" id="trainHash">—</div>
         </div>
 
         <!-- Password binding -->
         <div class="pwd-bind-box" style="margin-top:16px;">
-          <div class="pwd-bind-title">🔐 Прив'язати до паролю (необов'язково)</div>
+          <div class="pwd-bind-title">🔐 Link to password (optional)</div>
           <div class="pwd-bind-row">
             <input type="checkbox" id="bindCheck" onchange="toggleBind(this.checked)">
-            <label for="bindCheck">Додати біометрію до пароля — при логіні система звірятиме обидва фактори</label>
+            <label for="bindCheck">Add biometrics to password — the system will verify both factors at login</label>
           </div>
           <div id="bindForm" style="display:none;">
-            <input type="password" class="pwd-field" id="bindPassword" placeholder="Введи свій пароль для підтвердження">
-            <button class="btn-bind" id="btnBind" onclick="bindBiometrics()">🔗 ПРИВ'ЯЗАТИ БІОМЕТРІЮ</button>
+            <input type="password" class="pwd-field" id="bindPassword" placeholder="Enter your password for confirmation">
+            <button class="btn-bind" id="btnBind" onclick="bindBiometrics()">🔗 LINK BIOMETRICS</button>
           </div>
-          <div class="bind-ok" id="bindOk">✅ Біометрія прив'язана до паролю! При логіні буде автоматична перевірка.</div>
+          <div class="bind-ok" id="bindOk">✅ Biometrics linked to password! Automatic verification will occur at login.</div>
         </div>
       </div>
 
-      <div class="spinner" id="trainSpinner"><span class="spin"></span>Аналіз...</div>
+      <div class="spinner" id="trainSpinner"><span class="spin"></span>Analyzing...</div>
     </div>
 
     <!-- ══ VERIFY TAB ══════════════════════════════════════════════════════ -->
     <div id="tab-verify" class="tab-panel">
       <div class="seg">
-        <div class="seg-title">Верифікація — ти це ти?</div>
+        <div class="seg-title">Verification — is it really you?</div>
         <div class="typing-prompt">
-          Надрукуй те саме речення:
-          <strong style="color:var(--text-white);">"Кібербезпека починається зі звички"</strong>
+          Type the same sentence:
+          <strong style="color:var(--text-white);">"Cybersecurity starts with habit"</strong>
         </div>
-        <textarea class="typing-box" id="verifyInput" placeholder="Почни друкувати..."
+        <textarea class="typing-box" id="verifyInput" placeholder="Start typing..."
                   onkeydown="verifyKeyDown(event)" onkeyup="verifyKeyUp(event)"></textarea>
 
         <div class="stats-grid">
-          <div class="stat-box"><div class="stat-lbl">Клавіш</div><div class="stat-val" id="vCount">0</div></div>
+          <div class="stat-box"><div class="stat-lbl">Keys</div><div class="stat-val" id="vCount">0</div></div>
           <div class="stat-box"><div class="stat-lbl">CPM</div><div class="stat-val" id="vCpm">0</div></div>
           <div class="stat-box"><div class="stat-lbl">Dwell</div><div class="stat-val" id="vDwell">—</div></div>
-          <div class="stat-box"><div class="stat-lbl">Готовність</div><div class="stat-val" id="vReady" style="color:#34d399;">0%</div></div>
+          <div class="stat-box"><div class="stat-lbl">Readiness</div><div class="stat-val" id="vReady" style="color:#34d399;">0%</div></div>
         </div>
         <div class="prog-wrap"><div class="prog-fill" id="verifyProg" style="width:0%"></div></div>
 
-        <button class="btn-action" id="btnVerify" onclick="doVerify()" disabled>🔐 ВЕРИФІКУВАТИСЬ</button>
-        <button class="btn-reset" onclick="resetVerify()">🔄 Скинути</button>
+        <button class="btn-action" id="btnVerify" onclick="doVerify()" disabled>🔐 VERIFY</button>
+        <button class="btn-reset" onclick="resetVerify()">🔄 Reset</button>
       </div>
 
-      <div class="spinner" id="verifySpinner"><span class="spin"></span>Верифікація...</div>
+      <div class="spinner" id="verifySpinner"><span class="spin"></span>Verifying...</div>
 
       <div class="verify-result" id="verifyResult">
         <div class="verify-icon" id="vIcon"></div>
@@ -240,35 +240,35 @@
     <!-- ══ ANALYZE TAB ══════════════════════════════════════════════════════ -->
     <div id="tab-analyze" class="tab-panel">
       <div class="seg">
-        <div class="seg-title">Швидкий аналіз — подивись свій профіль</div>
-        <textarea class="typing-box" id="analyzeInput" placeholder="Друкуй будь-що..."
+        <div class="seg-title">Quick analysis — view your profile</div>
+        <textarea class="typing-box" id="analyzeInput" placeholder="Type anything..."
                   onkeydown="analyzeKeyDown(event)" onkeyup="analyzeKeyUp(event)"></textarea>
 
         <div class="stats-grid">
-          <div class="stat-box"><div class="stat-lbl">Клавіш</div><div class="stat-val" id="aCount">0</div></div>
+          <div class="stat-box"><div class="stat-lbl">Keys</div><div class="stat-val" id="aCount">0</div></div>
           <div class="stat-box"><div class="stat-lbl">CPM</div><div class="stat-val" id="aCpm">0</div></div>
           <div class="stat-box"><div class="stat-lbl">Dwell</div><div class="stat-val" id="aDwell">—</div></div>
-          <div class="stat-box"><div class="stat-lbl">Унікальність</div><div class="stat-val" id="aUnique" style="color:#34d399;">—</div></div>
+          <div class="stat-box"><div class="stat-lbl">Uniqueness</div><div class="stat-val" id="aUnique" style="color:#34d399;">—</div></div>
         </div>
         <div class="prog-wrap"><div class="prog-fill" id="analyzeProg" style="width:0%"></div></div>
 
-        <button class="btn-action" id="btnAnalyze" onclick="doAnalyze()" disabled>📊 АНАЛІЗУВАТИ</button>
-        <button class="btn-reset" onclick="resetAnalyze()">🔄 Скинути</button>
+        <button class="btn-action" id="btnAnalyze" onclick="doAnalyze()" disabled>📊 ANALYZE</button>
+        <button class="btn-reset" onclick="resetAnalyze()">🔄 Reset</button>
       </div>
 
-      <div class="spinner" id="analyzeSpinner"><span class="spin"></span>Аналіз...</div>
+      <div class="spinner" id="analyzeSpinner"><span class="spin"></span>Analyzing...</div>
 
       <div class="result-box" id="analyzeResult">
         <div class="metrics-grid">
           <div class="metric-box"><div class="metric-lbl">CPM</div><div class="metric-val" id="rCpm">—</div></div>
-          <div class="metric-box"><div class="metric-lbl">Dwell avg</div><div class="metric-val"><span id="rDwell">—</span><span class="metric-unit"> мс</span></div></div>
-          <div class="metric-box"><div class="metric-lbl">Унікальність</div><div class="metric-val" style="color:#34d399;"><span id="rUnique">—</span><span class="metric-unit">%</span></div></div>
-          <div class="metric-box"><div class="metric-lbl">Flight avg</div><div class="metric-val"><span id="rFlight">—</span><span class="metric-unit"> мс</span></div></div>
-          <div class="metric-box"><div class="metric-lbl">Помилки</div><div class="metric-val"><span id="rErr">—</span><span class="metric-unit">%</span></div></div>
-          <div class="metric-box"><div class="metric-lbl">Ризик</div><div class="metric-val" id="rRisk">—</div></div>
+          <div class="metric-box"><div class="metric-lbl">Dwell avg</div><div class="metric-val"><span id="rDwell">—</span><span class="metric-unit"> ms</span></div></div>
+          <div class="metric-box"><div class="metric-lbl">Uniqueness</div><div class="metric-val" style="color:#34d399;"><span id="rUnique">—</span><span class="metric-unit">%</span></div></div>
+          <div class="metric-box"><div class="metric-lbl">Flight avg</div><div class="metric-val"><span id="rFlight">—</span><span class="metric-unit"> ms</span></div></div>
+          <div class="metric-box"><div class="metric-lbl">Errors</div><div class="metric-val"><span id="rErr">—</span><span class="metric-unit">%</span></div></div>
+          <div class="metric-box"><div class="metric-lbl">Risk</div><div class="metric-val" id="rRisk">—</div></div>
         </div>
         <div class="fp-display">
-          <div class="fp-lbl">🔑 Відбиток цієї сесії</div>
+          <div class="fp-lbl">🔑 Fingerprint of this session</div>
           <div class="fp-hash" id="rHash">—</div>
         </div>
       </div>
@@ -334,8 +334,8 @@
       else if (i === completedSessions.length) dot.classList.add('current');
     }
     const label = document.getElementById('sessionLabel');
-    if (completedSessions.length >= 5) label.textContent = '✅ Всі 5 сесій записано!';
-    else label.textContent = 'Сесія '+(completedSessions.length+1)+' з 5';
+    if (completedSessions.length >= 5) label.textContent = '✅ All 5 sessions recorded!';
+    else label.textContent = 'Session '+(completedSessions.length+1)+' of 5';
   }
 
   async function captureSession() {
@@ -365,7 +365,7 @@
       } else {
         showSessionProgress();
       }
-    } catch(ex) { alert('Помилка: '+ex.message); }
+    } catch(ex) { alert('Error: '+ex.message); }
     finally { document.getElementById('trainSpinner').classList.remove('show'); }
   }
 
@@ -379,7 +379,7 @@
       const row = document.createElement('div');
       row.className = 'avg-session-row';
       row.innerHTML =
-        '<span style="width:55px;flex-shrink:0;">Сесія '+(i+1)+'</span>'+
+        '<span style="width:55px;flex-shrink:0;">Session '+(i+1)+'</span>'+
         '<div class="avg-bar"><div class="avg-bar-fill" style="width:'+Math.round(s.cpm/maxCpm*100)+'%"></div></div>'+
         '<span class="avg-num">'+s.cpm+' CPM</span>';
       container.appendChild(row);
@@ -404,8 +404,8 @@
       document.getElementById('avgCpm').textContent = avgCpm + ' CPM';
       document.getElementById('trainHash').textContent = d.fingerprintHash || '—';
       document.getElementById('avgCard').classList.add('show');
-      alert('🎉 Профіль створено! Середній CPM: '+avgCpm+'. Тепер можна верифікуватись.');
-    } catch(ex) { alert('Помилка реєстрації: '+ex.message); }
+      alert('🎉 Profile created! Average CPM: '+avgCpm+'. You can now verify.');
+    } catch(ex) { alert('Registration error: '+ex.message); }
     finally { document.getElementById('trainSpinner').classList.remove('show'); }
   }
 
@@ -426,8 +426,8 @@
 
   async function bindBiometrics() {
     const pwd = document.getElementById('bindPassword').value.trim();
-    if (!pwd) { alert('Введи пароль'); return; }
-    if (completedSessions.length < 5) { alert('Спочатку завершіть 5 сесій тренування'); return; }
+    if (!pwd) { alert('Enter your password'); return; }
+    if (completedSessions.length < 5) { alert('Complete 5 training sessions first'); return; }
     document.getElementById('btnBind').disabled = true;
 
     try {
@@ -441,7 +441,7 @@
       if (d.error) { alert(d.error); return; }
       document.getElementById('bindOk').classList.add('show');
       document.getElementById('bindPassword').value = '';
-    } catch(ex) { alert('Помилка: '+ex.message); }
+    } catch(ex) { alert('Error: '+ex.message); }
     finally { document.getElementById('btnBind').disabled = false; }
   }
 
@@ -476,14 +476,14 @@
       const isMatch=d.isMatch;
       el.className='verify-result show '+(isMatch?'match':'nomatch');
       const icons={STRONG_MATCH:'🟢',MATCH:'🟡',WEAK_MATCH:'🟠',NO_MATCH:'🔴'};
-      const verdicts={STRONG_MATCH:'ПОВНИЙ ЗБІГ',MATCH:'ЗБІГ',WEAK_MATCH:'ЧАСТКОВИЙ ЗБІГ',NO_MATCH:'НЕ ЗБІГАЄТЬСЯ'};
+      const verdicts={STRONG_MATCH:'FULL MATCH',MATCH:'MATCH',WEAK_MATCH:'PARTIAL MATCH',NO_MATCH:'NO MATCH'};
       document.getElementById('vIcon').textContent=icons[d.verdict]||'❓';
       document.getElementById('vVerdict').textContent=verdicts[d.verdict]||d.verdict;
       document.getElementById('vVerdict').style.color=isMatch?'#4ade80':'#f87171';
       document.getElementById('vSim').textContent=d.similarity+'%';
       document.getElementById('vSim').style.color=isMatch?'#34d399':'#f87171';
       document.getElementById('vExp').textContent=d.explanation||'';
-    } catch(ex){alert('Помилка: '+ex.message);}
+    } catch(ex){alert('Error: '+ex.message);}
     finally{document.getElementById('verifySpinner').classList.remove('show');document.getElementById('btnVerify').disabled=false;}
   }
 
@@ -521,7 +521,7 @@
       document.getElementById('rHash').textContent=d.fingerprintHash||'—';
       document.getElementById('aUnique').textContent=d.uniquenessScore+'%';
       document.getElementById('analyzeResult').classList.add('show');
-    }catch(ex){alert('Помилка: '+ex.message);}
+    }catch(ex){alert('Error: '+ex.message);}
     finally{document.getElementById('analyzeSpinner').classList.remove('show');document.getElementById('btnAnalyze').disabled=false;}
   }
   function resetAnalyze(){analyzeEvents=[];analyzePressMap={};analyzeStart=null;document.getElementById('analyzeInput').value='';updateAnalyzeLive();document.getElementById('analyzeResult').classList.remove('show');}

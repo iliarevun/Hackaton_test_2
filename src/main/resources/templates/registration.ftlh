@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>CyberShield Hub — Registration</title>
+  <title>SecureMind Hub — Registration</title>
   <link rel="stylesheet" href="/game.css">
   <style>
     /* Bio enroll */
@@ -68,20 +68,20 @@
   <div class="seed-box">
     <div class="seed-title">🔑 RECOVERY SEED PHRASE</div>
     <div class="seed-subtitle">
-      Запиши ці 10 слів на <strong style="color:#fbbf24;">папір або в надійне місце</strong>.
-      Якщо система заблокує тебе через біометрію — ці слова дозволять оскаржити рішення та відновити доступ.
+      Write down these 10 words on <strong style="color:#fbbf24;">paper or in a safe place</strong>.
+      If the system blocks you due to biometrics — these words will allow you to appeal the decision and restore access.
     </div>
-    <button class="btn-copy-seeds" onclick="copySeeds()">📋 Копіювати всі слова</button>
+    <button class="btn-copy-seeds" onclick="copySeeds()">📋 Copy all words</button>
     <div class="seed-grid" id="seedGrid"></div>
     <div class="seed-warn">
-      ⚠️ Це єдиний раз коли вони показуються. Після закриття — слова більше не будуть доступні.
+      ⚠️ This is the only time they are shown. After closing — the words will no longer be available.
     </div>
     <div class="seed-confirm-wrap">
       <input type="checkbox" id="seedConfirm" onchange="document.getElementById('btnSeedContinue').disabled=!this.checked">
-      <label for="seedConfirm">Я записав(ла) всі 10 слів і зберіг(ла) їх у безпечному місці</label>
+      <label for="seedConfirm">I have written down all 10 words and stored them in a safe place</label>
     </div>
     <button class="btn-seed-continue" id="btnSeedContinue" disabled onclick="closeSeedAndSubmit()">
-      ✅ Підтверджую — продовжити реєстрацію
+      ✅ Confirm — proceed with registration
     </button>
   </div>
 </div>
@@ -90,7 +90,7 @@
   <div class="auth-box" style="max-width:460px;">
     <div class="auth-head">
       <span class="auth-icon">🛡</span>
-      <div class="auth-t">CyberShield Hub</div>
+      <div class="auth-t">SecureMind Hub</div>
       <div class="auth-s">Create your secure account</div>
     </div>
 
@@ -99,24 +99,24 @@
           <!-- Biometric indicator (passive capture from form fields) -->
   <div class="bio-bar">
     <div class="bio-dot"></div>
-    <div><div class="bio-txt">🧬 Keystroke biometrics — фоновий запис</div></div>
+    <div><div class="bio-txt">🧬 Keystroke biometrics — background recording</div></div>
     <div class="bio-count" id="bioCount">0/10</div>
   </div>
   <div class="bio-progress"><div class="bio-progress-fill" id="bioFill" style="width:0%"></div></div>
 
-  <!-- ✅ Checkbox: додати біометрію до пароля -->
+  <!-- ✅ Checkbox: add biometrics to password -->
   <div class="bio-toggle-row" onclick="toggleBioEnroll()">
     <input type="checkbox" id="bioEnrollCheck" onchange="toggleBioEnroll()">
     <div>
-      <div class="bio-toggle-label">🧬 Додати біометрію до пароля</div>
-      <div class="bio-toggle-sub">Надрукуй одну фразу 5 разів — система запам'ятає твій ритм</div>
+      <div class="bio-toggle-label">🧬 Add biometrics to password</div>
+      <div class="bio-toggle-sub">Type one phrase 5 times — the system will remember your rhythm</div>
     </div>
   </div>
 
   <!-- 5-attempt biometric enrollment -->
   <div class="bio-enroll-section" id="bioEnrollSection">
-    <div class="bio-enroll-title">📝 Запис біометричного профілю</div>
-    <div class="bio-phrase-prompt" id="enrollPhrase">→ Друкуй: <strong id="phraseText">завантаження...</strong></div>
+    <div class="bio-enroll-title">📝 Recording biometric profile</div>
+    <div class="bio-phrase-prompt" id="enrollPhrase">→ Type: <strong id="phraseText">loading...</strong></div>
 
     <div class="attempts-progress" id="attemptsDots"></div>
 
@@ -127,11 +127,13 @@
 
   <div class="enroll-ok" id="enrollOk"></div>
 
-  <form method="post" action="/registration" id="regForm">
+  <form method="post" action="/registration" id="regForm" enctype="multipart/form-data">
     <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
     <input type="hidden" name="keystrokeData" id="keystrokeData"/>
     <input type="hidden" name="seedPhrase" id="seedPhraseField"/>
     <input type="hidden" name="biometricProfile" id="biometricProfileField"/>
+    <!-- fileAvatar is required by the controller but optional — send empty -->
+    <input type="file" name="fileAvatar" id="fileAvatarField" style="display:none;" accept="image/*"/>
     <div class="fg">
       <label class="fl">Name</label>
       <input class="fi" type="text" name="name" id="nameField" placeholder="Your name" required>
@@ -145,81 +147,6 @@
       <input class="fi" type="password" name="password" id="pwdField" placeholder="••••••••" required minlength="8">
     </div>
     <button class="btn btn-green w100 jc mt8" type="button" onclick="showSeedModal()">🚀 Create account</button>
-
-
-    <div class="fg" style="margin-top: 14px; display: flex; align-items: center; gap: 10px;">
-      <input type="checkbox" name="useBiometricsWithPassword" id="useBioCheck" onchange="toggleBioRegistration()">
-      <label for="useBioCheck" style="font-family: var(--font-ui); font-size: 0.85rem; color: #34d399; cursor: pointer;">
-        🧬 Посилити пароль біометрією клавіатурного почерку
-      </label>
-    </div>
-
-    <div id="bioRegSection" style="display: none; margin-top: 14px; padding: 16px; background: var(--bg-card3); border-radius: var(--r-md); border: 1px dashed var(--border);">
-      <div class="bio-header">
-        <div class="bio-title" style="color: #6ee7b7;">🎯 Етап тренування системи (Спроба: <span id="attemptCount">1</span> / 5)</div>
-      </div>
-      <div class="bio-prompt" style="margin-top: 6px;">Надрукуй фразу: <em style="color: #93c5fd;">"Захист починається з тебе"</em></div>
-
-      <textarea class="bio-typing-area" id="regBioArea" placeholder="Почни друкувати фразу тут..." style="width:100%; height:60px; margin-top:8px;"></textarea>
-
-      <input type="hidden" name="rawBiometricAttempts" id="rawBiometricAttempts">
-    </div>
-
-    <script>
-      function toggleBioRegistration() {
-        const isChecked = document.getElementById('useBioCheck').checked;
-        document.getElementById('bioRegSection').style.display = isChecked ? 'block' : 'none';
-      }
-
-      const allAttemptsData = [];
-      let currentAttemptEvents = [];
-      let regPressMap = {};
-      let totalAttempts = 0;
-
-      const regArea = document.getElementById('regBioArea');
-      if(regArea) {
-        regArea.addEventListener('keydown', e => {
-          if (!regPressMap[e.code]) regPressMap[e.code] = Date.now();
-        });
-
-        regArea.addEventListener('keyup', e => {
-          const press = regPressMap[e.code];
-          if (press) {
-            currentAttemptEvents.push({
-              key: e.key,
-              code: e.code,
-              pressTime: press,
-              releaseTime: Date.now()
-            });
-            delete regPressMap[e.code];
-          }
-
-          // Перевіряємо, чи фраза дописана (наприклад, за довжиною або якщо натиснуто Enter/крапку)
-          // Оптимально для тесту: зафіксуємо довжину символів (наприклад, 25 символів) або закінчення вводу
-          if (regArea.value.trim() === "Захист починається з тебе" || e.key === "Enter") {
-            totalAttempts++;
-            allAttemptsData.push(currentAttemptEvents); // Зберігаємо спробу
-
-            // Скидаємо буфери спроби
-            currentAttemptEvents = [];
-            regPressMap = {};
-            regArea.value = "";
-
-            if (totalAttempts < 5) {
-              document.getElementById('attemptCount').textContent = (totalAttempts + 1);
-              alert('Спроба ' + totalAttempts + ' збережена! Продовжте введення.');
-            } else {
-              document.getElementById('attemptCount').textContent = "Завершено! 🎉";
-              regArea.disabled = true;
-              regArea.placeholder = "Дякуємо! Профіль сформовано.";
-              // Записуємо фінальний масив спроб у приховану форму
-              document.getElementById('rawBiometricAttempts').value = JSON.stringify(allAttemptsData);
-              alert('Чудово! Усі 5 спроб записано. Тепер можете завершити реєстрацію.');
-            }
-          }
-        });
-      }
-    </script>
   </form>
 
   <div class="auth-div mt16">Already have an account?</div>
@@ -246,10 +173,10 @@
   'bomb','bone','bonus','book','brain','brand','brave','bridge','brief','bright','bring'];
 
   const ENROLL_PHRASES = [
-    'Кібербезпека починається з тебе',
-    'Мій цифровий підпис унікальний',
-    'Безпечний доступ до системи',
-    'Захист даних понад усе',
+    'Cybersecurity starts with you',
+    'My digital signature is unique',
+    'Secure access to the system',
+    'Data protection above all',
   ];
 
   const MAX_ATTEMPTS = 5;
@@ -296,11 +223,14 @@
       row.className = 'attempt-row';
       row.id = 'row' + i;
       row.style.display = i === 0 ? 'flex' : 'none';
-      row.innerHTML = `
-        <span class="attempt-label">Спроба ${i+1}</span>
-        <input class="attempt-input" id="inp${i}" type="text"
-               placeholder="${currentPhrase}" autocomplete="off" spellcheck="false"/>
-        <span class="attempt-status" id="st${i}"></span>`;
+
+      // Pure JavaScript without backticks or $ signs that trigger Freemarker
+      row.innerHTML =
+        '<span class="attempt-label">Attempt ' + (i + 1) + '</span>' +
+        '<input class="attempt-input" id="inp' + i + '" type="text" ' +
+               'placeholder="' + currentPhrase + '" autocomplete="off" spellcheck="false"/>' +
+        '<span class="attempt-status" id="st' + i + '"></span>';
+
       fields.appendChild(row);
     }
 
@@ -366,7 +296,7 @@
   async function computeAveragedProfile() {
     const resultBox = document.getElementById('bioEnrollResult');
     resultBox.className = 'bio-result-box show bio-result-warn';
-    resultBox.textContent = '⏳ Обчислення середнього профілю...';
+    resultBox.textContent = '⏳ Computing average profile...';
 
     try {
       // Collect all events from all attempts
@@ -385,11 +315,11 @@
 
       resultBox.className = 'bio-result-box show bio-result-ok';
       resultBox.innerHTML =
-        `✅ Профіль зафіксовано з ${MAX_ATTEMPTS} спроб<br>` +
-        `🏎 Швидкість: ${d.typingSpeedCpm} CPM | ` +
-        `⏱ Середній dwell: ${d.avgDwellMs}мс | ` +
-        `🔑 Унікальність: ${d.uniquenessScore}%<br>` +
-        `<span style="font-family:monospace;font-size:.7rem;color:#34d399;">hash: ${d.fingerprintHash}</span>`;
+        'Profile recorded from ' + MAX_ATTEMPTS + ' attempts<br>' +
+        'Speed: ' + d.typingSpeedCpm + ' CPM | ' +
+        'Average dwell: ' + d.avgDwellMs + 'ms | ' +
+        'Uniqueness: ' + d.uniquenessScore + '%<br>' +
+        '<span style="font-family:monospace;font-size:.7rem;color:#34d399;">hash: ' + d.fingerprintHash + '</span>';
 
       // Also enroll it
       await fetch('/biometrics/enroll', {
@@ -399,7 +329,7 @@
 
     } catch(e) {
       resultBox.className = 'bio-result-box show bio-result-warn';
-      resultBox.textContent = '⚠️ Помилка обчислення: ' + e.message;
+      resultBox.textContent = '⚠️ Calculation error: ' + e.message;
     }
   }
 
@@ -419,11 +349,11 @@
     const email = document.getElementById('emailField').value.trim();
     const pwd = document.getElementById('pwdField').value;
     if (!name || !email || !pwd || pwd.length < 8) {
-      alert('Заповніть всі поля (пароль мінімум 8 символів)');
+      alert('Please fill in all fields (password minimum 8 characters)');
       return;
     }
     if (bioEnrollEnabled && completedAttempts < MAX_ATTEMPTS) {
-      alert('Будь ласка, завершіть всі 5 спроб біометричного запису');
+      alert('Please complete all 5 biometric recording attempts');
       return;
     }
 
@@ -433,7 +363,7 @@
     currentSeed.forEach((word, i) => {
       const div = document.createElement('div');
       div.className = 'seed-item';
-      div.innerHTML = `<span class="seed-num">${i+1}.</span><span class="seed-word">${word}</span>`;
+      div.innerHTML = '<span class="seed-num">' + (i+1) + '.</span><span class="seed-word">' + word + '</span>';
       grid.appendChild(div);
     });
 
@@ -446,14 +376,19 @@
   function copySeeds() {
     navigator.clipboard.writeText(currentSeed.join(' ')).then(() => {
       const btn = document.querySelector('.btn-copy-seeds');
-      btn.textContent = '✅ Скопійовано!';
-      setTimeout(() => btn.textContent = '📋 Копіювати всі слова', 2000);
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = '📋 Copy all words', 2000);
     });
   }
 
   function closeSeedAndSubmit() {
     document.getElementById('seedOverlay').style.display = 'none';
+    // passive keystroke data
     document.getElementById('keystrokeData').value = JSON.stringify(events);
+    // biometric profile from the 5-attempt enrollment (if done)
+    if (averagedProfile) {
+      document.getElementById('biometricProfileField').value = JSON.stringify(averagedProfile);
+    }
     document.getElementById('regForm').submit();
   }
 

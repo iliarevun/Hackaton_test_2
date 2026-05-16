@@ -47,9 +47,8 @@ public class UserService {
         if(userRepository.findByEmail(user.getEmail()) != null)
             return false;
 
-
         Avatar imageAvatar;
-        if(fileAvatar.getSize() != 0){
+        if(fileAvatar != null && fileAvatar.getSize() != 0){
             imageAvatar = toAvatarEntity(fileAvatar);
             assert imageAvatar != null;
             user.addAvatar(imageAvatar);
@@ -86,49 +85,49 @@ public class UserService {
         OAuth2User oAuth2User = token.getPrincipal();
         String email = oAuth2User.getAttribute("email");
 
-        // Якщо користувач вже існує, повертаємо існуючого
+        // If the user already exists, return the existing one
         User existingUser = userRepository.findByEmail(email);
         if (existingUser != null) {
             if (existingUser.getRoles().contains(Role.ROLE_ADMIN)) {
                 model.addAttribute("admin", true);
             }
-            // Якщо користувач існує, можемо просто логінити його або повернути відповідне повідомлення
-            model.addAttribute("message", "Ласкаво просимо назад, " + existingUser.getName());
+            // If the user exists, we can simply log them in or return an appropriate message
+            model.addAttribute("message", "Welcome back, " + existingUser.getName());
             return;
         }
 
-        // Якщо користувач новий, створюємо його
+        // If the user is new, create them
         User newUser = new User();
         newUser.setEmail(email);
         newUser.setName(oAuth2User.getAttribute("name"));
-        newUser.setPhoneNumber("Не вказаний");
+        newUser.setPhoneNumber("Not specified");
         newUser.setActive(true);
         newUser.getRoles().add(Role.ROLE_ADMIN);
 
-        // Створення аватара
+        // Create avatar
         Avatar userAvatar = new Avatar();
         String avatarUrl = oAuth2User.getAttribute("picture");
         if (avatarUrl != null) {
             try {
                 URL url = new URL(avatarUrl);
-                System.out.println("Завантаження аватара з: " + avatarUrl);
+                System.out.println("Downloading avatar from: " + avatarUrl);
                 InputStream inputStream = url.openStream();
                 byte[] bytes = IOUtils.toByteArray(inputStream);
                 inputStream.close();
 
                 userAvatar.setBytes(bytes);
-                userAvatar.setSize((long) bytes.length); // Виправлено! Установка розміру файлу
-                userAvatar.setContentType("image/jpeg");  // Або отримати коректний тип контенту з заголовків HTTP
+                userAvatar.setSize((long) bytes.length); // Fixed! Set file size
+                userAvatar.setContentType("image/jpeg");  // Or get correct content type from HTTP headers
                 userAvatar.setOriginalFileName(email + ".jpg");
 
-                avatarRepository.save(userAvatar); // Спочатку зберігаємо аватар
+                avatarRepository.save(userAvatar); // Save avatar first
                 newUser.setAvatar(userAvatar); // Потім прив’язуємо до користувача
             }
             catch (Exception e){
                 System.out.println(e);
             }
         }
-// Збереження нового користувача
+// Save new user
         newUser.setAvatar(userAvatar);
         userRepository.save(newUser);
     }
@@ -139,10 +138,10 @@ public class UserService {
             throw new UsernameNotFoundException("User not found with email: " + email);
         }
 
-        // Повертаємо об'єкт UserDetails, який розуміє Spring Security
+        // Return UserDetails object understood by Spring Security
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
-                .password(user.getPassword()) // використовує вже захешований пароль з БД
+                .password(user.getPassword()) // uses the already-hashed password from DB
                 .disabled(!user.isActive())
                 .authorities(user.getRoles().stream()
                         .map(role -> new org.springframework.security.core.authority.SimpleGrantedAuthority(role.name()))
@@ -159,13 +158,13 @@ public class UserService {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode attemptsNode = mapper.readTree(rawAttemptsJson);
 
-            // Перевіряємо, чи отримали ми масив із 5 спроб
+            // Check if we received an array of 5 attempts
             if (!attemptsNode.isArray() || attemptsNode.size() < 5) return;
 
-            // Збираємо дані: Клавіша (код) -> Список усіх зафіксованих тривалостей натискання
+            // Collect data: Key (code) -> List of all recorded press durations
             Map<String, List<Long>> dwellTimesMap = new HashMap<>();
 
-            // 1. Проходимо по кожній із спроб
+            // 1. Iterate over each attempt
             for (JsonNode attempt : attemptsNode) {
                 if (attempt.isArray()) {
                     for (JsonNode event : attempt) {
@@ -174,7 +173,7 @@ public class UserService {
                         long release = event.path("releaseTime").asLong(0);
                         long dwellTime = release - press;
 
-                        // Фільтруємо аномалії та порожні коди
+                        // Filter out anomalies and empty codes
                         if (!code.isBlank() && dwellTime > 0) {
                             dwellTimesMap.computeIfAbsent(code, k -> new ArrayList<>()).add(dwellTime);
                         }
@@ -182,10 +181,10 @@ public class UserService {
                 }
             }
 
-            // 2. Розраховуємо середнє арифметичне значення для кожної клавіші
+            // 2. Calculate the arithmetic mean for each key
             Map<String, Long> finalAverages = new HashMap<>();
 
-            // Виправлений прохід по EntrySet з чітким визначенням типів
+            // Fixed iteration over EntrySet with explicit type definitions
             for (Map.Entry<String, List<Long>> entry : dwellTimesMap.entrySet()) {
                 String keycode = entry.getKey();
                 List<Long> times = entry.getValue();
@@ -195,20 +194,20 @@ public class UserService {
                     for (Long t : times) {
                         sum += t;
                     }
-                    long average = sum / times.size(); // Обчислюємо середнє для цієї клавіші
+                    long average = sum / times.size(); // Compute average for this key
                     finalAverages.put(keycode, average);
                 }
             }
 
-            // 3. Зберігаємо усереднений біометричний профіль у форматі JSON в сутність User
+            // 3. Save the averaged biometric profile as JSON in the User entity
             String profileJson = mapper.writeValueAsString(finalAverages);
             user.setBiometricProfileJson(profileJson);
-            user.setUseBiometricsWithPassword(true); // активуємо прапорець зв'язку з паролем
+            user.setUseBiometricsWithPassword(true); // activate the password-link flag
 
-            log.info("\u001B[32m[Biometrics] Профіль для користувача {} успішно сформовано на основі 5 спроб!\u001B[0m", user.getEmail());
+            log.info("\u001B[32m[Biometrics] Profile for user {} successfully built from 5 attempts!\u001B[0m", user.getEmail());
 
         } catch (Exception e) {
-            log.error("Помилка обробки біометричного тренування користувача: {}", e.getMessage());
+            log.error("Error processing biometric training for user: {}", e.getMessage());
         }
     }
 

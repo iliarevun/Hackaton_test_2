@@ -40,10 +40,10 @@ public class UserController {
     @PostMapping("/login/mnemonic")
     public String loginByMnemonic(@RequestParam("mnemonicPhrase") String mnemonicPhrase,
                                   jakarta.servlet.http.HttpServletRequest request) {
-        // Очищаємо фразу від випадкових подвійних пробілів
+        // Remove accidental double spaces from the phrase
         String cleanMnemonic = mnemonicPhrase.trim().replaceAll("\\s+", " ");
 
-        // 1. Шукаємо користувача через твій сервіс
+        // 1. Find the user via the service
         User user = userService.findUserByMnemonic(cleanMnemonic);
 
         if (user == null) {
@@ -52,20 +52,20 @@ public class UserController {
         }
 
         try {
-            // 2. Завантажуємо UserDetails, використовуючи email знайденого юзера
+            // 2. Load UserDetails using the found user's email
             org.springframework.security.core.userdetails.UserDetails userDetails =
                     userService.loadUserByUsername(user.getEmail());
 
-            // 3. Створюємо токен автентифікації
+            // 3. Create the authentication token
             org.springframework.security.core.Authentication authentication =
                     new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities()
                     );
 
-            // 4. Встановлюємо автентифікацію в SecurityContextHolder
+            // 4. Set authentication in SecurityContextHolder
             org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // 5. Зберігаємо контекст у сесії, щоб авторизація не злітала при переході на головну сторінку
+            // 5. Save context in session so authentication persists when navigating to the main page
             request.getSession().setAttribute(
                     org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
                     org.springframework.security.core.context.SecurityContextHolder.getContext()
@@ -96,22 +96,47 @@ public class UserController {
     }
 
     @PostMapping("/registration")
-    public String createUser(@RequestParam("fileAvatar") MultipartFile fileAvatar, User user, Model model) throws IOException {
+    public String createUser(
+            @RequestParam(value = "fileAvatar", required = false) MultipartFile fileAvatar,
+            @RequestParam(value = "seedPhrase",       required = false) String seedPhrase,
+            @RequestParam(value = "biometricProfile", required = false) String biometricProfile,
+            @RequestParam(value = "rawBiometricAttempts", required = false) String rawBiometricAttempts,
+            User user, Model model) throws IOException {
 
-        if(!userService.createUser(user, fileAvatar)){
-            model.addAttribute(fileAvatar.getName());
+        // Attach seed phrase (mnemonic) to user before saving
+        if (seedPhrase != null && !seedPhrase.isBlank()) {
+            user.setMnemonicPhrase(seedPhrase.trim().replaceAll("\\s+", " "));
+        }
+
+        // fileAvatar is optional — createUser handles null/empty correctly
+
+        if (!userService.createUser(user, fileAvatar)) {
             model.addAttribute("errorMessage", "User with email "
                     + user.getEmail() + " already exists");
             return "registration";
         }
-        ConfirmationToken confirmationToken = confirmationTokenService.getConfirmationToken(user.getId());
-         String link = "https://hackathon-test-g54r.onrender.com/confirm?token=" + confirmationToken.getToken();
 
+        // Save biometric profile if provided (from the 5-attempt enrollment)
+        if (biometricProfile != null && !biometricProfile.isBlank()) {
+            User saved = userRepository.findByEmail(user.getEmail());
+            if (saved != null) {
+                saved.setBiometricProfileJson(biometricProfile);
+                saved.setUseBiometricsWithPassword(true);
+                userRepository.save(saved);
+            }
+        } else if (rawBiometricAttempts != null && !rawBiometricAttempts.isBlank()) {
+            User saved = userRepository.findByEmail(user.getEmail());
+            if (saved != null) {
+                userService.processAndSetBiometricProfile(saved, rawBiometricAttempts);
+                userRepository.save(saved);
+            }
+        }
+
+        ConfirmationToken confirmationToken = confirmationTokenService.getConfirmationToken(user.getId());
+        String link = "https://hackathon-test-g54r.onrender.com/confirm?token=" + confirmationToken.getToken();
 
         String confirmMessage = "An email has been sent to your email address. " +
                 "Follow the link in the email to confirm your email address.";
-
-
 
         emailSender.send(user.getEmail(), buildEmail(user.getName(), link));
         model.addAttribute("confirmMessage", confirmMessage);
@@ -142,8 +167,8 @@ public class UserController {
     }
 
 
-    //перевірка Security: Доступ аутентифікованого та неаутентифікованого користувача.
-    // Коли не зайшли у свій профіль, то має перекинути на сторінку з login;
+    // Security check: Access for authenticated and unauthenticated users.
+    // When not logged in, should redirect to the login page;
     @GetMapping("/hello")
     public String securityUrl() {
         return "hello";
@@ -265,7 +290,7 @@ public class UserController {
                 "      <td width=\"10\" valign=\"middle\"><br></td>\n" +
                 "      <td style=\"font-family:Helvetica,Arial,sans-serif;font-size:19px;line-height:1.315789474;max-width:560px\">\n" +
                 "        \n" +
-                "            <p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\">Hello, " + name + ",</p><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> Thank you for registering with ReUse Hub. Please follow this link to confirm your email address: </p><blockquote style=\"Margin:0 0 20px 0;border-left:10px solid #b1b4b6;padding:15px 0 0.1px 15px;font-size:19px;line-height:25px\"><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> <a href=\"" + link + "\">Activate now</a> </p></blockquote>\n The link will expire in 15 minutes. <p>See you at ReUse Hub!</p>" +
+                "            <p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\">Hello, " + name + ",</p><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> Thank you for registering with SecureMind Hub. Please follow this link to confirm your email address: </p><blockquote style=\"Margin:0 0 20px 0;border-left:10px solid #b1b4b6;padding:15px 0 0.1px 15px;font-size:19px;line-height:25px\"><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> <a href=\"" + link + "\">Activate now</a> </p></blockquote>\n The link will expire in 15 minutes. <p>See you at SecureMind Hub!</p>" +
                 "        \n" +
                 "      </td>\n" +
                 "      <td width=\"10\" valign=\"middle\"><br></td>\n" +

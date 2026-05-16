@@ -26,7 +26,7 @@ public class UserBody {
 
     // ── Equipment (comma-separated list of selected items) ──
     @Column(name = "equipment", length = 500)
-    private String equipment;      // e.g. "Гантелі,Гумові стрічки,Турнік"
+    private String equipment;      // e.g. "Dumbbells,Resistance Bands,Pull-up Bar"
 
     // ── Workout preferences ──
     @Column(name = "workout_location")
@@ -50,13 +50,13 @@ public class UserBody {
 
     // ── Goal label helpers ──
     public String getGoalLabel() {
-        if (goal == null) return "Не вказано";
+        if (goal == null) return "Not specified";
         return switch (goal) {
-            case "LOSE_WEIGHT"  -> "Схуднути";
-            case "GAIN_MUSCLE"  -> "Набрати м'язи";
-            case "STAY_FIT"     -> "Тримати форму";
-            case "ENDURANCE"    -> "Витривалість";
-            case "FLEXIBILITY"  -> "Гнучкість";
+            case "LOSE_WEIGHT"  -> "Lose Weight";
+            case "GAIN_MUSCLE"  -> "Gain Muscle";
+            case "STAY_FIT"     -> "Stay Fit";
+            case "ENDURANCE"    -> "Endurance";
+            case "FLEXIBILITY"  -> "Flexibility";
             default -> goal;
         };
     }

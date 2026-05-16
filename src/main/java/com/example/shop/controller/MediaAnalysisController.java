@@ -53,10 +53,10 @@ public class MediaAnalysisController {
 
         String text = body.getOrDefault("text", "").trim();
         if (text.isBlank()) {
-            return Map.of("error", "Текст порожній");
+            return Map.of("error", "Text is empty");
         }
         if (text.length() < 30) {
-            return Map.of("error", "Текст занадто короткий для аналізу (мінімум 30 символів)");
+            return Map.of("error", "Text is too short for analysis (minimum 30 characters)");
         }
 
         log.info("Media analysis requested by user={}, textLength={}",
@@ -74,11 +74,11 @@ public class MediaAnalysisController {
             @RequestParam("file") MultipartFile file,
             Principal principal, Authentication auth) {
 
-        if (file.isEmpty()) return Map.of("error", "Файл порожній");
+        if (file.isEmpty()) return Map.of("error", "File is empty");
 
         try {
             String text = new String(file.getBytes(), StandardCharsets.UTF_8);
-            if (text.isBlank()) return Map.of("error", "Файл не містить тексту");
+            if (text.isBlank()) return Map.of("error", "File contains no text");
 
             log.info("Media analysis (file upload): name={}, size={}",
                     file.getOriginalFilename(), file.getSize());
@@ -90,7 +90,7 @@ public class MediaAnalysisController {
             return result;
         } catch (Exception e) {
             log.error("File analysis error: {}", e.getMessage());
-            return Map.of("error", "Помилка читання файлу: " + e.getMessage());
+            return Map.of("error", "File read error: " + e.getMessage());
         }
     }
 }

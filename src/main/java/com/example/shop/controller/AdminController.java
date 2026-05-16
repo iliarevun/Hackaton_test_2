@@ -6,7 +6,6 @@ import com.example.shop.models.User;
 
 import com.example.shop.services.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -20,8 +19,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.Principal;
-import java.util.Arrays;
-import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -29,8 +26,6 @@ import java.util.Map;
 public class AdminController {
 
     private final UserService userService;
-    //private final NotificationService notificationService;
-   // private final CurrencyExchangeService currencyExchangeService;
 
     @GetMapping("/admin")
     public String admin(Model model, Authentication authentication, Principal principal){
@@ -41,27 +36,20 @@ public class AdminController {
 
             if (authentication instanceof OAuth2AuthenticationToken token) {
                 user = userService.getUserByEmail(token.getPrincipal().getAttribute("email"));
-                user.setCoins(BigDecimal.valueOf(user.getCoins())
-                        .setScale(1, RoundingMode.HALF_UP)
-                        .doubleValue());
+
 
                 model.addAttribute("user", user);
 
             } else if (authentication instanceof UsernamePasswordAuthenticationToken) {
                 user = userService.findUserByPrincipal(principal.getName());
 
-                user.setCoins(BigDecimal.valueOf(user.getCoins())
-                        .setScale(1, RoundingMode.HALF_UP)
-                        .doubleValue());
+
 
                 model.addAttribute("user", user);
 
             }
 
         }
-
-     //   model.addAttribute("euro_exchange_rate", currencyExchangeService.getEuroToUahRate());
-     //   model.addAttribute("notifications", notificationService.getNotificationsList(user.getId()));
             return "admin";
     }
 
@@ -76,16 +64,12 @@ public class AdminController {
     public String userEdit(@PathVariable("user") User user, Model model){
         model.addAttribute("user", user);
         model.addAttribute("roles", Role.values());
-      //  model.addAttribute("euro_exchange_rate", currencyExchangeService.getEuroToUahRate());
-      //  model.addAttribute("notifications", notificationService.getNotificationsList(user.getId()));
         return "user_edit";
     }
 
     @PostMapping("admin/user/edit")
     public String userEdit(@RequestParam("userId") User user,  @RequestParam String role, Model model){
         userService.changeUserRole(user, role);
-     //   model.addAttribute("euro_exchange_rate", currencyExchangeService.getEuroToUahRate());
-     //   model.addAttribute("notifications", notificationService.getNotificationsList(user.getId()));
         return "redirect:/admin";
     }
 

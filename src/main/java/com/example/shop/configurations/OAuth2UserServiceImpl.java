@@ -56,7 +56,7 @@ public class OAuth2UserServiceImpl extends DefaultOAuth2UserService {
         User newUser = new User();
         newUser.setEmail(email);
         newUser.setName(name != null ? name : email.split("@")[0]);
-        newUser.setPhoneNumber("Не вказаний");
+        newUser.setPhoneNumber("Not specified");
         newUser.setActive(true);
         newUser.getRoles().add(Role.ROLE_USER);
 

@@ -163,19 +163,19 @@ public class SteganographyService {
 
         if (entry == null) {
             return Map.of("success", false,
-                    "error", "Ключ не знайдено або термін дії минув. На цій платформі розшифрування неможливе.");
+                    "error", "Key not found or expired. Decryption on this platform is not possible.");
         }
         if (Instant.now().isAfter(entry.expiresAt())) {
             keyStore.remove(key);
             return Map.of("success", false,
-                    "error", "Термін дії ключа минув (30 секунд). Розшифрування на платформі неможливе.");
+                    "error", "Key has expired (30 seconds). Decryption on this platform is not possible.");
         }
 
         try {
             // 1. LSB-extract
             String extracted = lsbExtract(stegoImageBytes);
             int endIdx = extracted.indexOf(LSB_END_MARKER);
-            if (endIdx < 0) return Map.of("success", false, "error", "У зображенні не знайдено прихованих даних.");
+            if (endIdx < 0) return Map.of("success", false, "error", "No hidden data found in the image.");
             String ciphertextB64 = extracted.substring(0, endIdx);
 
             // 2. Unpack salt+iv+ciphertext
@@ -208,7 +208,7 @@ public class SteganographyService {
 
         } catch (Exception e) {
             log.error("Decrypt error: {}", e.getMessage());
-            return Map.of("success", false, "error", "Помилка розшифрування. Перевірте ключ та зображення.");
+            return Map.of("success", false, "error", "Decryption error. Please check the key and the image.");
         }
     }
 
@@ -662,7 +662,7 @@ public class SteganographyService {
         byte[] msgBytes = message.getBytes(StandardCharsets.UTF_8);
         int totalBits = 32 + msgBytes.length * 8;
         if (totalBits > img.getWidth() * img.getHeight() * 3)
-            throw new IllegalStateException("Зображення замале для цього повідомлення");
+            throw new IllegalStateException("Image is too small for this message");
 
         boolean[] bits = new boolean[totalBits];
         int len = msgBytes.length;

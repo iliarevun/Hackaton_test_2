@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Аналіз медіа — Media Shield</title>
+  <title>Media Analysis — Media Shield</title>
 
   <meta name="_csrf" content="${_csrf.token}"/>
   <meta name="_csrf_header" content="${_csrf.headerName}"/>
@@ -64,38 +64,44 @@
 <body>
 <div class="page-wrap">
   <!-- Nav -->
-  <nav class="topnav">
-    <a href="/" class="nav-logo">🛡 CyberShield Hub</a>
-    <div class="nav-links">
-      <a href="/media-analysis" class="nav-link active">🛡 Медіа</a>
-      <a href="/query-proxy" class="nav-link">🔒 Проксі</a>
-      <a href="/steganography" class="nav-link">🖼 Стеганографія</a>
-      <a href="/biometrics" class="nav-link">🧬 Біометрія</a>
-    </div>
+  <header class="gh">
+  <a href="/" class="gh-logo"><div class="logo-gem">🛡</div>SECURE<span>MIND</span></a>
+  <nav class="gh-nav">
+    <a href="/media-analysis" class="nb active-nav">🛡 Media</a>
+    <a href="/query-proxy" class="nb">🔒 Proxy</a>
+    <a href="/steganography" class="nb">🖼 Steganography</a>
+    <a href="/biometrics" class="nb">🧬 Biometrics</a>
   </nav>
+  <div class="gh-right">
+    <form action="/logout" method="post" style="margin:0;">
+      <input type="hidden" name="${(_csrf.parameterName)!''}" value="${(_csrf.token)!''}">
+      <button type="submit" class="nb" style="cursor:pointer;background:none;border:none;color:var(--text-muted);">Sign out</button>
+    </form>
+  </div>
+</header>
 
   <div class="content-wrap" style="max-width:760px;margin:0 auto;">
 
     <!-- Hero -->
     <div class="module-hero">
       <div class="module-icon">🛡️</div>
-      <div class="module-title">MEDIA SHIELD — Аналіз медіа</div>
-      <div class="module-desc">Виявляй упередженість ШІ, фейки та пропаганду в будь-якому тексті.
-        Завантаж статтю, новину або пост — отримай детальний аналіз за секунди.</div>
+      <div class="module-title">MEDIA SHIELD — Media Analysis</div>
+      <div class="module-desc">Detect AI bias, fake news, and propaganda in any text.
+        Upload an article, news item, or post — get a detailed analysis in seconds.</div>
     </div>
 
     <!-- Tabs -->
     <div class="tab-row">
-      <button class="tab-btn active" onclick="switchTab('text')">✏️ Текст</button>
-      <button class="tab-btn" onclick="switchTab('file')">📄 Файл</button>
+      <button class="tab-btn active" onclick="switchTab('text')">✏️ Text</button>
+      <button class="tab-btn" onclick="switchTab('file')">📄 File</button>
     </div>
 
     <!-- Text tab -->
     <div id="tab-text" class="tab-panel active">
-      <textarea id="textInput" placeholder="Вставте текст статті, новини або публікації для аналізу..."
+      <textarea id="textInput" placeholder="Paste the text of an article, news item, or post for analysis..."
                 oninput="updateCount()"></textarea>
-      <div class="char-count"><span id="charCount">0</span> символів</div>
-      <button class="btn-analyze" id="btnText" onclick="analyzeText()">🔍 АНАЛІЗУВАТИ ТЕКСТ</button>
+      <div class="char-count"><span id="charCount">0</span> characters</div>
+      <button class="btn-analyze" id="btnText" onclick="analyzeText()">🔍 ANALYZE TEXT</button>
     </div>
 
     <!-- File tab -->
@@ -103,16 +109,16 @@
       <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
            ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
         <div class="upload-icon">📂</div>
-        <div class="upload-label">Клікни або перетягни .txt / .html / .md файл</div>
+        <div class="upload-label">Click or drag .txt / .html / .md file</div>
         <div class="upload-label" id="fileName" style="color:var(--cyan);margin-top:6px;"></div>
       </div>
       <input type="file" id="fileInput" accept=".txt,.html,.md,.htm" style="display:none"
              onchange="onFileSelected()">
-      <button class="btn-analyze" id="btnFile" onclick="analyzeFile()">🔍 АНАЛІЗУВАТИ ФАЙЛ</button>
+      <button class="btn-analyze" id="btnFile" onclick="analyzeFile()">🔍 ANALYZE FILE</button>
     </div>
 
     <!-- Spinner -->
-    <div class="spinner" id="spinner"><span class="spin"></span>ШІ аналізує текст...</div>
+    <div class="spinner" id="spinner"><span class="spin"></span>AI is analyzing text...</div>
 
     <!-- Result -->
     <div class="result-card" id="resultCard">
@@ -120,42 +126,42 @@
 
       <div class="metric-grid">
         <div class="metric-box">
-          <div class="metric-label">Упередженість ШІ</div>
+          <div class="metric-label">AI Bias</div>
           <div class="metric-val" id="mAiBias">—</div>
           <div class="score-bar-wrap"><div class="score-bar" id="barAiBias"></div></div>
         </div>
         <div class="metric-box">
-          <div class="metric-label">Фейк</div>
+          <div class="metric-label">Fake News</div>
           <div class="metric-val" id="mFake">—</div>
           <div class="score-bar-wrap"><div class="score-bar" id="barFake"></div></div>
         </div>
         <div class="metric-box">
-          <div class="metric-label">Пропаганда</div>
+          <div class="metric-label">Propaganda</div>
           <div class="metric-val" id="mProp">—</div>
           <div class="score-bar-wrap"><div class="score-bar" id="barProp"></div></div>
         </div>
       </div>
 
       <div class="detail-section">
-        <div class="detail-title">Детальний розбір</div>
+        <div class="detail-title">Detailed breakdown</div>
         <div class="detail-row">
           <div class="detail-icon" id="icoAi">🤖</div>
           <div>
-            <div class="detail-name">Упередженість ШІ</div>
+            <div class="detail-name">AI Bias</div>
             <div class="detail-exp" id="expAi"></div>
           </div>
         </div>
         <div class="detail-row">
           <div class="detail-icon" id="icoFake">📰</div>
           <div>
-            <div class="detail-name">Фейкові новини</div>
+            <div class="detail-name">Fake News</div>
             <div class="detail-exp" id="expFake"></div>
           </div>
         </div>
         <div class="detail-row">
           <div class="detail-icon" id="icoProp">📢</div>
           <div>
-            <div class="detail-name">Пропаганда</div>
+            <div class="detail-name">Propaganda</div>
             <div class="detail-exp" id="expProp"></div>
             <div class="techniques-wrap" id="techniques"></div>
           </div>
@@ -191,7 +197,7 @@
 
   async function analyzeText() {
   const text = document.getElementById('textInput').value.trim();
-  if (!text || text.length < 30) { alert('Введіть текст мінімум 30 символів'); return; }
+  if (!text || text.length < 30) { alert('Enter at least 30 characters'); return; }
   setLoading(true);
   try {
     const res = await fetch('/media-analysis/analyze', {
@@ -200,27 +206,27 @@
     });
 
     if (!res.ok) {
-      throw new Error('Сервер повернув статус ' + res.status);
+      throw new Error('Server returned status ' + res.status);
     }
 
     const data = await res.json();
 
-    // Якщо сервер повернув помилку всередині JSON
+    // If the server returned an error inside the JSON
     if (data.error) {
-      alert('Помилка сервісу: ' + data.error);
+      alert('Service error: ' + data.error);
       return;
     }
 
     renderResult(data);
   } catch(e) {
-    alert('Помилка зв\'язку з сервером: ' + e.message);
+    alert('Server connection error: ' + e.message);
   } finally {
     setLoading(false);
   }
 }
 
   async function analyzeFile() {
-    if (!selectedFile) { alert('Оберіть файл'); return; }
+    if (!selectedFile) { alert('Please select a file'); return; }
     setLoading(true);
     try {
       const fd = new FormData();
@@ -228,7 +234,7 @@
       const res = await fetch('/media-analysis/upload', {method:'POST', body:fd});
       const data = await res.json();
       renderResult(data);
-    } catch(e) { alert('Помилка: '+e.message); }
+    } catch(e) { alert('Error: '+e.message); }
     finally { setLoading(false); }
   }
 
@@ -246,22 +252,22 @@
   }
 
 function renderResult(d) {
-  if (!d || d.error) { alert('Помилка: ' + (d ? d.error : 'порожні дані')); return; }
+  if (!d || d.error) { alert('Error: ' + (d ? d.error : 'empty data')); return; }
 
-  console.log("Рендеринг результатів. Вхідний об'єкт:", d);
+  console.log("Rendering results. Input object:", d);
 
   const risk = d.overallRisk || d.overall_risk || 'UNKNOWN';
-  const riskLabels = {LOW:'✅ НИЗЬКИЙ РИЗИК', MEDIUM:'⚠️ СЕРЕДНІЙ РИЗИК', HIGH:'🚨 ВИСОКИЙ РИЗИК', UNKNOWN:'❓ НЕВІДОМО'};
+  const riskLabels = {LOW:'✅ LOW RISK', MEDIUM:'⚠️ MEDIUM RISK', HIGH:'🚨 HIGH RISK', UNKNOWN:'❓ UNKNOWN'};
   const badge = document.getElementById('riskBadge');
   badge.textContent = riskLabels[risk] || risk;
   badge.className = 'risk-badge risk-' + risk;
 
-  // Гнучкий пошук об'єктів
+  // Flexible object search
   const ai = d.aiBias || d.ai_bias || d.aibias || {};
   const fk = d.fakeNews || d.fake_news || d.fakenews || {};
   const pr = d.propaganda || d.propagand_info || {};
 
-  // Виправлена логіка метрик: статус detected залежить від ВЕЛИЧИНИ відсотка ризику
+  // Fixed metric logic: detected status depends on the MAGNITUDE of the risk percentage
   function setMetric(valId, barId, score) {
     const el = document.getElementById(valId);
     if (!el) return;
@@ -269,7 +275,7 @@ function renderResult(d) {
     const finalScore = score !== undefined ? score : 0;
     el.textContent = finalScore + '%';
 
-    // Якщо ризик більше 45% — це небезпечно (червоний), якщо менше — все ок (зелений)
+    // If risk is above 45% — dangerous (red), if below — all good (green)
     const isDangerous = finalScore > 45;
     el.className = 'metric-val ' + (isDangerous ? 'metric-detected' : 'metric-ok');
 
@@ -281,12 +287,12 @@ function renderResult(d) {
     return isDangerous;
   }
 
-  // Оновлюємо відсотки та отримуємо реальний статус небезпеки
+  // Update percentages and get the real danger status
   const aiDanger = setMetric('mAiBias', 'barAiBias', ai.score || 0);
   const fkDanger = setMetric('mFake',   'barFake',   fk.score || 0);
   const prDanger = setMetric('mProp',   'barProp',   pr.score || 0);
 
-  // Виставляємо іконки-емодзі відповідно до реального рівня загрози
+  // Set emoji icons according to the actual threat level
   document.getElementById('icoAi').textContent   = aiDanger ? '🚨' : '✅';
   document.getElementById('icoFake').textContent = fkDanger ? '🚨' : '✅';
   document.getElementById('icoProp').textContent = prDanger ? '🚨' : '✅';
@@ -294,7 +300,7 @@ function renderResult(d) {
   function setExp(id, val) {
     const el = document.getElementById(id);
     if (el) {
-      el.textContent = val || 'Ознак маніпуляцій або дезінформації не виявлено.';
+      el.textContent = val || 'No signs of manipulation or disinformation detected.';
       el.style.display = 'block';
     }
   }
@@ -314,10 +320,10 @@ function renderResult(d) {
     });
   }
 
-  document.getElementById('summary').textContent        = d.summary || 'Аналіз завершено.';
+  document.getElementById('summary').textContent        = d.summary || 'Analysis complete.';
   document.getElementById('recommendation').textContent = d.recommendation ? '💡 ' + d.recommendation : '';
 
-  // Примусово показуємо блок результатів
+  // Force-show the results block
   const resultCard = document.getElementById('resultCard');
   resultCard.classList.add('show');
   resultCard.style.display = 'block';

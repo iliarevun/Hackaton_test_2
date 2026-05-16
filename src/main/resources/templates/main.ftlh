@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>CyberShield Hub — Your Digital Security Ecosystem</title>
+  <title>SecureMind Hub — Your Digital Security Ecosystem</title>
   <link rel="stylesheet" href="/game.css">
   <style>
     .avatar-menu { position:relative; }
@@ -58,7 +58,7 @@
 </head>
 <body>
 <header class="gh">
-  <a href="/" class="gh-logo"><div class="logo-gem">🛡</div>CYBER<span>SHIELD</span></a>
+  <a href="/" class="gh-logo"><div class="logo-gem">🛡</div>SECURE<span>MIND</span></a>
   <nav class="gh-nav">
     <a href="/media-analysis" class="nb">🛡️ Media Shield</a>
     <a href="/query-proxy"    class="nb">🔒 Query Proxy</a>
@@ -82,15 +82,8 @@
     <div class="ring"></div><div class="ring"></div>
     <div class="ring"></div><div class="ring"></div>
   </div>
-  <div class="hero-char">
-    <div class="hero-avatar">
-      <#if user?? && user.avatar??>
-      <img src="/avatars/${user.avatar.id?string('0')}" alt="hero">
-      <#else>🦸</#if>
-    </div>
-    <div class="hero-lvl">LVL<br><#if progress??>${progress.level}<#else>1</#if></div>
-  </div>
-  <h1 class="hero-title"><span class="shimmer-text">CyberShield Hub</span></h1>
+
+  <h1 class="hero-title"><span class="shimmer-text">SecureMind Hub</span></h1>
   <p class="hero-quote">"Your data is yours. Protect it."</p>
 
   <!-- Security stats strip -->
@@ -113,14 +106,14 @@
 <!-- ── Privacy Ecosystem ─────────────────────────────────────── -->
 <div class="c" style="max-width:820px;">
   <div class="eco-section">
-    <div class="eco-title">🛡 CYBERSHIELD ECOSYSTEM</div>
+    <div class="eco-title">🛡 SECUREMIND ECOSYSTEM</div>
     <div class="eco-grid">
 
       <a href="/media-analysis" class="eco-card media">
         <div class="eco-ico">🛡️</div>
         <div>
           <div class="eco-name">MEDIA SHIELD</div>
-          <div class="eco-desc">Аналіз тексту на упередженість ШІ, фейки та пропаганду. Завантаж статтю — отримай детальний розбір.</div>
+          <div class="eco-desc">Analyze text for AI bias, fake news, and propaganda. Upload an article — get a detailed breakdown.</div>
           <div class="eco-tag">🔍 AI Analysis</div>
         </div>
       </a>
@@ -129,7 +122,7 @@
         <div class="eco-ico">🔒</div>
         <div>
           <div class="eco-name">QUERY PROXY</div>
-          <div class="eco-desc">Запитуй ШІ анонімно. Автоматично видаляє email, телефони та картки з твоїх запитів.</div>
+          <div class="eco-desc">Query AI anonymously. Automatically removes emails, phone numbers, and card data from your queries.</div>
           <div class="eco-tag">🧹 PII Cleaner</div>
         </div>
       </a>
@@ -138,7 +131,7 @@
         <div class="eco-ico">🖼️</div>
         <div>
           <div class="eco-name">SECRET FRAME</div>
-          <div class="eco-desc">Шифрування AES-256 + LSB в картинці Gemini AI. Ключ доступний 30 секунд — потім зникає назавжди.</div>
+          <div class="eco-desc">AES-256 + LSB encryption inside a Gemini AI image. The key is available for 30 seconds — then it disappears forever.</div>
           <div class="eco-tag">⏱ 30s Key</div>
         </div>
       </a>
@@ -147,7 +140,7 @@
         <div class="eco-ico">🧬</div>
         <div>
           <div class="eco-name">KEY SHIELD</div>
-          <div class="eco-desc">Твій ритм набору тексту унікальний як відбиток пальця. Поведінкова біометрія без паролів.</div>
+          <div class="eco-desc">Your typing rhythm is as unique as a fingerprint. Behavioral biometrics without passwords.</div>
           <div class="eco-tag">🔑 Behavioral ID</div>
         </div>
       </a>

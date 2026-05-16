@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>CyberShield Hub — Sign in</title>
+  <title>SecureMind Hub — Sign in</title>
   <link rel="stylesheet" href="/game.css">
   <style>
     .google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:13px 16px;border-radius:var(--r-md);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);font-family:var(--font-ui);font-size:.88rem;font-weight:700;color:var(--text-primary);cursor:pointer;transition:all .18s;text-decoration:none;}
@@ -51,7 +51,7 @@
   <div class="auth-box">
     <div class="auth-head">
       <span class="auth-icon">🛡</span>
-      <div class="auth-t">CyberShield Hub</div>
+      <div class="auth-t">SecureMind Hub</div>
       <div class="auth-s">Sign in to your secure account</div>
     </div>
 
@@ -71,7 +71,7 @@
 Sign in via Google
 </a>
 
-<div class="divider">або email / пароль</div>
+<div class="divider">or email / password</div>
 
         <!-- 🧬 Keystroke biometrics -->
 <div class="bio-section">
@@ -79,15 +79,15 @@ Sign in via Google
   <div class="bio-dot"></div>
   <div class="bio-title">🧬 Keystroke Biometrics</div>
 </div>
-<div class="bio-hint">Надрукуй фразу нижче — система звірить твій ритм набору з профілем</div>
-<div class="bio-prompt" style="margin-top:8px;">→ Надрукуй: <em id="bioPromptText">"Захист починається з тебе"</em></div>
-<textarea class="bio-typing-area" id="bioTypingArea" placeholder="Друкуй тут..."></textarea>
+<div class="bio-hint">Type the phrase below — the system will compare your typing rhythm against your profile</div>
+<div class="bio-prompt" style="margin-top:8px;">→ Type: <em id="bioPromptText">"Security starts with you"</em></div>
+<textarea class="bio-typing-area" id="bioTypingArea" placeholder="Type here..."></textarea>
 <div class="bio-progress"><div class="bio-progress-fill" id="bioFill"></div></div>
-<div class="bio-count" id="bioCount">0 / 10 клавіш</div>
+<div class="bio-count" id="bioCount">0 / 10 keys</div>
 </div>
 
 <div class="verify-box verify-neutral" id="verifyNeutral">
-💡 Введи хоча б 10 символів для перевірки біометрії
+💡 Enter at least 10 characters to check biometrics
 </div>
 <div class="verify-box verify-ok"  id="verifyOk"></div>
 <div class="verify-box verify-warn" id="verifyWarn"></div>
@@ -96,15 +96,15 @@ Sign in via Google
 <div class="seed-section">
 <div class="seed-hdr">
   <span class="seed-hdr-icon">🔑</span>
-  <span class="seed-hdr-txt">Seed phrase (опційно)</span>
+  <span class="seed-hdr-txt">Seed phrase (optional)</span>
 </div>
 <div class="seed-hint">
-  Якщо біометрія не впізнала тебе — введи 10 слів seed phrase для підтвердження особи
+  If biometrics did not recognize you — enter 10 seed phrase words to confirm your identity
 </div>
 <input class="seed-input" id="seedInput" type="text"
-       placeholder="слово1 слово2 слово3 слово4 слово5 слово6 слово7 слово8 слово9 слово10"
+       placeholder="word1 word2 word3 word4 word5 word6 word7 word8 word9 word10"
        autocomplete="off" spellcheck="false"/>
-<button class="btn-seed-verify" onclick="verifySeed()">🔍 ПЕРЕВІРИТИ SEED PHRASE</button>
+<button class="btn-seed-verify" onclick="verifySeed()">🔍 VERIFY SEED PHRASE</button>
 <div class="verify-box verify-ok"  id="seedOk"  style="margin-top:8px;"></div>
 <div class="verify-box verify-err" id="seedErr" style="margin-top:8px;"></div>
 </div>
@@ -134,10 +134,10 @@ No account? <a href="/registration" class="auth-link">Create one →</a>
 
 <script>
 const prompts = [
-  '"Захист починається з тебе"',
-  '"Кібербезпека — це звичка"',
-  '"Твій ритм унікальний"',
-  '"Кожен символ — це підпис"'
+  '"Security starts with you"',
+  '"Cybersecurity is a habit"',
+  '"Your rhythm is unique"',
+  '"Every character is a signature"'
 ];
 document.getElementById('bioPromptText').textContent =
   prompts[Math.floor(Date.now() / 30000) % prompts.length];
@@ -155,7 +155,7 @@ area.addEventListener('keyup', e => {
     bioEvents.push({key: e.key, pressTime: press, releaseTime: Date.now(), positionInWord: 0});
     delete pressMap[e.code];
     const n = bioEvents.length;
-    document.getElementById('bioCount').textContent = n + ' / 10 клавіш';
+    document.getElementById('bioCount').textContent = n + ' / 10 keys';
     document.getElementById('bioFill').style.width = Math.min(100, n / 10 * 100) + '%';
     if (n >= 10) runVerify();
   }
@@ -181,23 +181,23 @@ async function runVerify() {
     });
     const d = await res.json();
     document.getElementById('verifyNeutral').classList.remove('show');
-    if (d.error && d.error.includes('Спочатку зареєструйте')) {
+    if (d.error && d.error.includes('Please enroll')) {
       const nb = document.getElementById('verifyNeutral');
-      nb.textContent = '🔵 Біометричний профіль не знайдено — перший вхід';
+      nb.textContent = '🔵 Biometric profile not found — first login';
       nb.classList.add('show');
       return;
     }
     if (d.isMatch) {
       document.getElementById('verifyOk').textContent =
-        '🧬 ' + d.verdict + ' — схожість ' + d.similarity + '% | ' + d.explanation;
+        '🧬 ' + d.verdict + ' — similarity ' + d.similarity + '% | ' + d.explanation;
       document.getElementById('verifyOk').classList.add('show');
     } else {
       document.getElementById('verifyWarn').textContent =
-        '⚠️ Незнайомий ритм — ' + d.similarity + '% | ' + d.explanation;
+        '⚠️ Unknown rhythm — ' + d.similarity + '% | ' + d.explanation;
       document.getElementById('verifyWarn').classList.add('show');
     }
   } catch(_) {
-    document.getElementById('verifyNeutral').textContent = '🔵 Біометрія недоступна';
+    document.getElementById('verifyNeutral').textContent = '🔵 Biometrics unavailable';
     document.getElementById('verifyNeutral').classList.add('show');
   }
 }
@@ -209,7 +209,7 @@ async function verifySeed() {
   document.getElementById('seedErr').classList.remove('show');
 
   if (words.length !== 10) {
-    document.getElementById('seedErr').textContent = '❌ Потрібно рівно 10 слів (зараз: ' + words.length + ')';
+    document.getElementById('seedErr').textContent = '❌ Exactly 10 words required (current: ' + words.length + ')';
     document.getElementById('seedErr').classList.add('show');
     return;
   }
@@ -221,14 +221,14 @@ async function verifySeed() {
     });
     const d = await res.json();
     if (d.valid) {
-      document.getElementById('seedOk').textContent = '✅ Seed phrase підтверджено — особу верифіковано';
+      document.getElementById('seedOk').textContent = '✅ Seed phrase confirmed — identity verified';
       document.getElementById('seedOk').classList.add('show');
     } else {
-      document.getElementById('seedErr').textContent = '❌ Seed phrase не збігається з профілем';
+      document.getElementById('seedErr').textContent = '❌ Seed phrase does not match the profile';
       document.getElementById('seedErr').classList.add('show');
     }
   } catch(e) {
-    document.getElementById('seedErr').textContent = '❌ Помилка перевірки: ' + e.message;
+    document.getElementById('seedErr').textContent = '❌ Verification error: ' + e.message;
     document.getElementById('seedErr').classList.add('show');
   }
 }

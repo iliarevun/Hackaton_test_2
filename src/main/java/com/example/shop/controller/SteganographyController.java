@@ -59,7 +59,7 @@ public class SteganographyController {
         boolean hasText = text != null && !text.isBlank();
         boolean hasFile = file != null && !file.isEmpty();
         if (!hasText && !hasFile) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Введіть текст або завантажте файл"));
+            return ResponseEntity.badRequest().body(Map.of("error", "Please enter text or upload a file"));
         }
 
         try {
@@ -89,10 +89,10 @@ public class SteganographyController {
             Principal principal, Authentication auth) {
 
         if (image == null || image.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Завантажте зображення"));
+            return ResponseEntity.badRequest().body(Map.of("error", "Please upload an image"));
         }
         if (key == null || key.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Введіть ключ"));
+            return ResponseEntity.badRequest().body(Map.of("error", "Please enter the key"));
         }
 
         try {

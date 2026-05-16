@@ -37,12 +37,15 @@ public class User implements UserDetails {
     @Column(name = "password", length = 1000)
     private String password;
 
-    private boolean useBiometricsWithPassword = false; // Чи зв'язувати пароль з біометрією
+    @Column(name = "mnemonic_phrase", length = 1000)
+    private String mnemonicPhrase;
+
+    private boolean useBiometricsWithPassword = false; // Whether to link the password with biometrics
 
     @Column(columnDefinition = "LONGTEXT")
-    private String biometricProfileJson; // Тут зберігатиметься усереднений шаблон таймінгів
+    private String biometricProfileJson; // Stores the averaged timing template
 
-// Геттери та сеттери (або @Data від Lombok автоматично їх створить)
+// Getters and setters (or @Data from Lombok will generate them automatically)
 
     @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
@@ -123,7 +126,7 @@ public class User implements UserDetails {
         return Objects.hash(id, email, phoneNumber, name, isActive, avatar, password, roles, dateOfRegistration);
     }
 
-    //Цей метод відповідає за можливість банити користувача;
+    // This method is responsible for the ability to ban a user;
     @Override
     public boolean isEnabled() {
         return isActive;

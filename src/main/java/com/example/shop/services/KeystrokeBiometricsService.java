@@ -181,11 +181,11 @@ public class KeystrokeBiometricsService {
                 ? (sim >= 90 ? "STRONG_MATCH" : "MATCH")
                 : (sim >= 50 ? "WEAK_MATCH" : "NO_MATCH");
         String explanation = switch (verdict) {
-            case "STRONG_MATCH" -> "Поведінковий відбиток майже ідентичний. Висока впевненість.";
-            case "MATCH"        -> "Достатня схожість. Ймовірно та сама людина.";
-            case "WEAK_MATCH"   -> "Часткова схожість. Можлива інша умова (стрес, мобільний пристрій).";
-            case "NO_MATCH"     -> "Поведінковий відбиток не збігається. Ймовірно інша людина.";
-            default             -> "Невідомо.";
+            case "STRONG_MATCH" -> "Behavioral fingerprint is nearly identical. High confidence.";
+            case "MATCH"        -> "Sufficient similarity. Likely the same person.";
+            case "WEAK_MATCH"   -> "Partial similarity. Possible different condition (stress, mobile device).";
+            case "NO_MATCH"     -> "Behavioral fingerprint does not match. Likely a different person.";
+            default             -> "Unknown.";
         };
         return new VerificationResult(isMatch, sim, verdict, explanation);
     }
@@ -233,5 +233,34 @@ public class KeystrokeBiometricsService {
         } catch (Exception e) {
             return "hash-error";
         }
+    }
+
+    /**
+     * Reconstruct a BiometricProfile from a stored JSON map (e.g. loaded from DB).
+     * Used to restore the baseline without having the raw keystroke events.
+     */
+    public BiometricProfile reconstructFromJson(Map<String, Object> stored, String userId) {
+        try {
+            double avgDwell  = toDouble(stored.getOrDefault("avgDwellMs", 0));
+            double stdDwell  = toDouble(stored.getOrDefault("stdDwellMs", 0));
+            double avgFlight = toDouble(stored.getOrDefault("avgFlightMs", 0));
+            double stdFlight = toDouble(stored.getOrDefault("stdFlightMs", 0));
+            double cpm       = toDouble(stored.getOrDefault("typingSpeedCpm", 0));
+            double errorRate = toDouble(stored.getOrDefault("errorRate", 0));
+            double burstRatio= toDouble(stored.getOrDefault("burstRatio", 0));
+            String hash      = String.valueOf(stored.getOrDefault("fingerprintHash", "restored"));
+            double unique    = toDouble(stored.getOrDefault("uniquenessScore", 0));
+            String risk      = String.valueOf(stored.getOrDefault("riskLevel", "LOW"));
+            return new BiometricProfile(userId, avgDwell, stdDwell, avgFlight, stdFlight,
+                    cpm, errorRate, burstRatio, Map.of(), hash, unique, risk);
+        } catch (Exception e) {
+            log.warn("reconstructFromJson failed: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private double toDouble(Object v) {
+        if (v instanceof Number n) return n.doubleValue();
+        try { return Double.parseDouble(String.valueOf(v)); } catch (Exception e) { return 0; }
     }
 }

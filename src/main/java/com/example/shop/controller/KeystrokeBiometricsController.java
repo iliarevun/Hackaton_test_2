@@ -81,7 +81,7 @@ public class KeystrokeBiometricsController {
 
             if (rawEvents == null || rawEvents.size() < 5) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "error", "Потрібно мінімум 5 натискань клавіш для аналізу"));
+                        "error", "At least 5 keystrokes are required for analysis"));
             }
 
             List<KeystrokeEvent> events = rawEvents.stream().map(e -> new KeystrokeEvent(
@@ -125,7 +125,7 @@ public class KeystrokeBiometricsController {
             Principal principal, Authentication auth) {
 
         User user = currentUser(principal, auth);
-        if (user == null) return ResponseEntity.status(401).body(Map.of("error", "Не авторизовано"));
+        if (user == null) return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
 
         String userId = String.valueOf(user.getId());
 
@@ -135,7 +135,7 @@ public class KeystrokeBiometricsController {
 
             if (rawEvents == null || rawEvents.size() < 10) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "error", "Для реєстрації потрібно мінімум 10 натискань клавіш"));
+                        "error", "At least 10 keystrokes are required for enrollment"));
             }
 
             List<KeystrokeEvent> events = rawEvents.stream().map(e -> new KeystrokeEvent(
@@ -149,7 +149,7 @@ public class KeystrokeBiometricsController {
 
             if ("HIGH".equals(profile.riskLevel())) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "error", "Виявлено аномальну поведінку. Введіть текст вручну природньо."));
+                        "error", "Anomalous behavior detected. Please type naturally by hand."));
             }
 
             profileStore.put(userId, profile);
@@ -161,7 +161,7 @@ public class KeystrokeBiometricsController {
                     "uniquenessScore",  Math.round(profile.uniquenessScore() * 10) / 10.0,
                     "typingSpeedCpm",   Math.round(profile.typingSpeedCpm()),
                     "riskLevel",        profile.riskLevel(),
-                    "message",          "Поведінковий профіль збережено успішно!"
+                    "message",          "Behavioral profile saved successfully!"
             ));
 
         } catch (Exception e) {
@@ -172,6 +172,7 @@ public class KeystrokeBiometricsController {
 
     /**
      * Verify: compare a new typing session against the enrolled baseline.
+     * Works for both authenticated users (DB profile) and anonymous (in-memory).
      */
     @PostMapping("/biometrics/verify")
     @ResponseBody
@@ -180,13 +181,34 @@ public class KeystrokeBiometricsController {
             Principal principal, Authentication auth) {
 
         User user = currentUser(principal, auth);
-        if (user == null) return ResponseEntity.status(401).body(Map.of("error", "Не авторизовано"));
+
+        // Anonymous on the login page — no profile to compare against
+        if (user == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Please enroll your behavioral profile first (/biometrics/enroll)"));
+        }
 
         String userId = String.valueOf(user.getId());
         BiometricProfile baseline = profileStore.get(userId);
+
+        // Fallback: try to load profile from DB if not in memory
+        if (baseline == null && user.getBiometricProfileJson() != null && !user.getBiometricProfileJson().isBlank()) {
+            try {
+                Map<String, Object> stored = objectMapper.readValue(
+                        user.getBiometricProfileJson(), new TypeReference<>() {});
+                log.info("Loaded biometric baseline from DB for user={}", userId);
+                // Reconstruct a lightweight baseline from stored averages for comparison
+                // We'll use the stored data to create a synthetic profile
+                baseline = biometricsService.reconstructFromJson(stored, userId);
+                if (baseline != null) profileStore.put(userId, baseline);
+            } catch (Exception ex) {
+                log.warn("Could not reconstruct biometric profile from DB: {}", ex.getMessage());
+            }
+        }
+
         if (baseline == null) {
             return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Спочатку зареєструйте свій поведінковий профіль (/biometrics/enroll)"));
+                    "error", "Please enroll your behavioral profile first (/biometrics/enroll)"));
         }
 
         try {
@@ -219,6 +241,29 @@ public class KeystrokeBiometricsController {
             log.error("Biometrics verify error: {}", e.getMessage());
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    /**
+     * Verify seed phrase — used on the login page (no auth required).
+     * Checks the submitted phrase against the stored mnemonic in the DB.
+     */
+    @PostMapping("/biometrics/verify-seed")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> verifySeed(
+            @RequestBody Map<String, Object> body) {
+
+        String seedPhrase = String.valueOf(body.getOrDefault("seedPhrase", "")).trim()
+                .replaceAll("\\s+", " ");
+
+        if (seedPhrase.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("valid", false, "error", "Seed phrase is empty"));
+        }
+
+        User user = userService.findUserByMnemonic(seedPhrase);
+        if (user == null) {
+            return ResponseEntity.ok(Map.of("valid", false));
+        }
+        return ResponseEntity.ok(Map.of("valid", true, "email", user.getEmail()));
     }
 
     /**

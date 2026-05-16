@@ -24,11 +24,13 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(req -> req
                         .requestMatchers(
-                                "/", "/registration", "/login", "/confirm",
+                                "/", "/registration", "/login", "/confirm", "/error",
                                 "/game.css", "/style.css", "/script.js",
                                 "/*.png", "/*.jpg", "/*.gif", "/*.svg", "/*.ico",
-                                "/avatars/**", "/images/**", "/img/**"
-
+                                "/avatars/**", "/images/**", "/img/**",
+                                // Biometric verify and seed check are called from the login page
+                                "/biometrics/verify", "/biometrics/verify-seed",
+                                "/login/mnemonic"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -64,7 +66,8 @@ public class SecurityConfig {
                         "/media-analysis/analyze", "/media-analysis/upload",
                         "/query-proxy/ask", "/query-proxy/sanitize",
                         "/steganography/encrypt", "/steganography/decrypt",
-                        "/biometrics/analyze", "/biometrics/enroll", "/biometrics/verify"
+                        "/biometrics/analyze", "/biometrics/enroll", "/biometrics/verify",
+                        "/biometrics/verify-seed"
                 ));
         return http.build();
     }

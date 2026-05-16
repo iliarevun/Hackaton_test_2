@@ -95,7 +95,7 @@ public class QueryProxyService {
      */
     public String askAI(String sanitizedQuery, String systemContext) {
         String fullPrompt = systemContext != null && !systemContext.isBlank()
-                ? systemContext + "\n\nЗапит користувача: " + sanitizedQuery
+                ? systemContext + "\n\nUser query: " + sanitizedQuery
                 : sanitizedQuery;
 
         try {
@@ -116,7 +116,7 @@ public class QueryProxyService {
                     .path("text").asText();
         } catch (Exception e) {
             log.error("QueryProxy AI error: {}", e.getMessage());
-            return "Не вдалося отримати відповідь від ШІ. Спробуйте ще раз.";
+            return "Failed to get a response from the AI. Please try again.";
         }
     }
 

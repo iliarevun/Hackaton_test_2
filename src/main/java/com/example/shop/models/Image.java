@@ -34,7 +34,7 @@ public class Image {
     private String contentType;
 
     @Column(name = "isPreviewImage")
-    private boolean isPreviewImage; //true для головної фотографії оголошення;
+    private boolean isPreviewImage; // true for the main photo of the listing;
 
 
     @Column(name = "bytes", columnDefinition = "LONGBLOB")
