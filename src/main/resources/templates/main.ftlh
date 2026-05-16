@@ -68,7 +68,6 @@
     <a href="/leaderboard"    class="nb">🏆 Leaderboard</a>
   </nav>
   <div class="gh-right">
-    <div class="xp-pill">⚡ <span id="hdrXp">${(progress.totalXp)!0}</span> XP</div>
     <form action="/logout" method="post" style="margin:0;">
       <input type="hidden" name="${(_csrf.parameterName)!''}" value="${(_csrf.token)!''}">
       <button type="submit" class="nb" style="cursor:pointer;background:none;border:none;color:var(--text-muted);">Sign out</button>
