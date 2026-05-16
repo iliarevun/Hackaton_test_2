@@ -59,7 +59,6 @@ public class OAuth2UserServiceImpl extends DefaultOAuth2UserService {
         newUser.setPhoneNumber("Не вказаний");
         newUser.setActive(true);
         newUser.getRoles().add(Role.ROLE_USER);
-        newUser.setCoins(100);
 
         // Download and save avatar from Google
         if (picture != null) {

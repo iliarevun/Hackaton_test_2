@@ -37,20 +37,12 @@ public class User implements UserDetails {
     @Column(name = "password", length = 1000)
     private String password;
 
-    @Column(name = "coins")
-    private double coins;
+    private boolean useBiometricsWithPassword = false; // Чи зв'язувати пароль з біометрією
 
-    @Column(name = "plastic_saved, kg")
-    private double plasticSaved;
+    @Column(columnDefinition = "LONGTEXT")
+    private String biometricProfileJson; // Тут зберігатиметься усереднений шаблон таймінгів
 
-    @Column(name = "metal_saved, kg")
-    private double metalSaved;
-
-    @Column(name = "glass_saved, kg")
-    private double glassSaved;
-
-    @Column(name = "CO2_saved, kg")
-    private double CO2Saved;
+// Геттери та сеттери (або @Data від Lombok автоматично їх створить)
 
     @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
@@ -69,7 +61,6 @@ public class User implements UserDetails {
                 ", isActive=" + isActive +
                 ", avatar=" + avatar +
                 ", password='" + password + '\'' +
-                ", coins=" + coins +
                 ", roles=" + roles +
                 ", dateOfRegistration=" + dateOfRegistration +
                 '}';
@@ -124,12 +115,12 @@ public class User implements UserDetails {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return isActive == user.isActive && Double.compare(coins, user.coins) == 0 && Double.compare(plasticSaved, user.plasticSaved) == 0 && Double.compare(metalSaved, user.metalSaved) == 0 && Double.compare(glassSaved, user.glassSaved) == 0 && Double.compare(CO2Saved, user.CO2Saved) == 0 && Objects.equals(id, user.id) && Objects.equals(email, user.email) && Objects.equals(phoneNumber, user.phoneNumber) && Objects.equals(name, user.name) && Objects.equals(avatar, user.avatar) && Objects.equals(password, user.password) && Objects.equals(roles, user.roles) && Objects.equals(dateOfRegistration, user.dateOfRegistration);
+        return isActive == user.isActive && Objects.equals(id, user.id) && Objects.equals(email, user.email) && Objects.equals(phoneNumber, user.phoneNumber) && Objects.equals(name, user.name) && Objects.equals(avatar, user.avatar) && Objects.equals(password, user.password) && Objects.equals(roles, user.roles) && Objects.equals(dateOfRegistration, user.dateOfRegistration);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, email, phoneNumber, name, isActive, avatar, password, coins, plasticSaved, metalSaved, glassSaved, CO2Saved, roles, dateOfRegistration);
+        return Objects.hash(id, email, phoneNumber, name, isActive, avatar, password, roles, dateOfRegistration);
     }
 
     //Цей метод відповідає за можливість банити користувача;

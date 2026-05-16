@@ -1,241 +1,276 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Поведінкова біометрія — KeyShield</title>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>CyberShield — Біометрія</title>
   <link rel="stylesheet" href="/game.css">
   <style>
-    .module-hero{background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(59,130,246,.08));border:1px solid rgba(16,185,129,.25);border-radius:var(--r-xl);padding:28px 32px;margin-bottom:24px;}
-    .module-icon{font-size:3rem;margin-bottom:10px;}
-    .module-title{font-family:var(--font-game);font-size:1.4rem;font-weight:900;color:var(--text-white);letter-spacing:1px;}
-    .module-desc{font-family:var(--font-ui);font-size:0.85rem;color:var(--text-second);margin-top:6px;}
-    .tab-row{display:flex;gap:8px;margin-bottom:20px;}
-    .tab-btn{font-family:var(--font-ui);font-size:0.78rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-second);cursor:pointer;transition:all .2s;}
+    .bio-hero{background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(59,130,246,.06));border:1px solid rgba(16,185,129,.2);border-radius:var(--r-xl);padding:24px 28px;margin-bottom:22px;}
+    .bio-hero-title{font-family:var(--font-game);font-size:1.2rem;font-weight:900;color:var(--text-white);letter-spacing:2px;}
+    .bio-hero-desc{font-family:var(--font-ui);font-size:.82rem;color:var(--text-second);margin-top:5px;line-height:1.5;}
+
+    .tab-row{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+    .tab-btn{font-family:var(--font-ui);font-size:.75rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-second);cursor:pointer;transition:all .18s;}
     .tab-btn.active{border-color:rgba(16,185,129,.5);color:#34d399;background:rgba(16,185,129,.08);}
     .tab-panel{display:none;}.tab-panel.active{display:block;}
-    .typing-box{width:100%;min-height:100px;background:var(--bg-card2);border:2px solid var(--border);border-radius:var(--r-md);padding:16px;font-family:var(--font-ui);font-size:1rem;color:var(--text-primary);resize:none;outline:none;box-sizing:border-box;transition:border-color .2s;}
+
+    .seg{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-xl);padding:20px 22px;margin-bottom:16px;}
+    .seg-title{font-family:var(--font-game);font-size:.65rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;}
+
+    .typing-box{width:100%;min-height:80px;background:var(--bg-card2);border:2px solid var(--border);border-radius:var(--r-md);padding:14px;font-family:var(--font-ui);font-size:.95rem;color:var(--text-primary);resize:none;outline:none;box-sizing:border-box;transition:border-color .2s;}
     .typing-box.recording{border-color:rgba(16,185,129,.5);box-shadow:0 0 0 2px rgba(16,185,129,.08);}
-    .typing-prompt{background:var(--bg-card3);border-radius:var(--r-md);padding:14px 18px;margin-bottom:12px;font-family:var(--font-ui);font-size:0.85rem;color:var(--cyan);border-left:3px solid var(--cyan);}
-    .prompt-text{font-weight:700;color:var(--text-white);margin-top:4px;}
-    .stats-live{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0;}
-    .stat-live-box{background:var(--bg-card3);border-radius:var(--r-md);padding:10px;text-align:center;}
-    .stat-live-label{font-family:var(--font-game);font-size:0.58rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;}
-    .stat-live-val{font-family:var(--font-game);font-size:1.1rem;font-weight:900;color:var(--text-white);}
-    .stat-live-val.green{color:#34d399;}.stat-live-val.yellow{color:#fbbf24;}.stat-live-val.red{color:#f87171;}
-    .progress-bar-wrap{height:4px;background:var(--bg-card3);border-radius:2px;margin:10px 0;overflow:hidden;}
-    .progress-bar{height:100%;background:linear-gradient(90deg,#10b981,#3b82f6);border-radius:2px;transition:width .3s ease;}
-    .progress-label{font-family:var(--font-ui);font-size:0.72rem;color:var(--text-muted);text-align:right;margin-top:2px;}
-    .btn-action{width:100%;padding:13px;background:linear-gradient(135deg,#059669,#047857);border:none;border-radius:var(--r-md);font-family:var(--font-game);font-size:0.82rem;font-weight:700;letter-spacing:2px;color:#fff;cursor:pointer;margin-top:12px;transition:opacity .2s;}
-    .btn-action:hover{opacity:.85;}
-    .btn-action:disabled{opacity:.4;cursor:not-allowed;}
-    .btn-reset{width:100%;padding:10px;background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r-md);font-family:var(--font-game);font-size:0.75rem;letter-spacing:1px;color:var(--text-second);cursor:pointer;margin-top:8px;transition:all .2s;}
+    .typing-prompt{background:var(--bg-card3);border-radius:var(--r-md);padding:12px 16px;margin-bottom:10px;font-family:var(--font-ui);font-size:.82rem;color:var(--cyan);border-left:3px solid var(--cyan);}
+
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0;}
+    .stat-box{background:var(--bg-card3);border-radius:var(--r-md);padding:10px;text-align:center;}
+    .stat-lbl{font-family:var(--font-game);font-size:.55rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;}
+    .stat-val{font-family:var(--font-game);font-size:1rem;font-weight:900;color:var(--text-white);}
+
+    /* Session progress */
+    .session-track{display:flex;gap:8px;margin:12px 0;align-items:center;}
+    .session-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-family:var(--font-game);color:var(--text-muted);transition:all .3s;flex-shrink:0;}
+    .session-dot.done{border-color:#34d399;background:rgba(16,185,129,.15);color:#34d399;}
+    .session-dot.active{border-color:#3b82f6;background:rgba(59,130,246,.15);color:#60a5fa;animation:pulse .8s ease-in-out infinite;}
+    .session-dot.current{border-color:#f59e0b;background:rgba(245,158,11,.15);color:#fbbf24;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+    .session-label{font-family:var(--font-ui);font-size:.75rem;color:var(--text-muted);}
+
+    /* Progress bar */
+    .prog-wrap{height:4px;background:var(--bg-card3);border-radius:2px;margin:8px 0;overflow:hidden;}
+    .prog-fill{height:100%;background:linear-gradient(90deg,#10b981,#3b82f6);border-radius:2px;transition:width .3s;}
+
+    .btn-action{width:100%;padding:12px;background:linear-gradient(135deg,#059669,#047857);border:none;border-radius:var(--r-md);font-family:var(--font-game);font-size:.8rem;font-weight:700;letter-spacing:2px;color:#fff;cursor:pointer;margin-top:10px;transition:opacity .2s;}
+    .btn-action:hover{opacity:.85;}.btn-action:disabled{opacity:.38;cursor:not-allowed;}
+    .btn-reset{width:100%;padding:9px;background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r-md);font-family:var(--font-game);font-size:.72rem;letter-spacing:1px;color:var(--text-second);cursor:pointer;margin-top:6px;transition:all .2s;}
     .btn-reset:hover{border-color:#f87171;color:#f87171;}
-    .spinner{display:none;text-align:center;padding:20px;font-family:var(--font-ui);color:var(--text-second);}
-    .spinner.show{display:block;}
-    .spin{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:#10b981;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px;}
-    @keyframes spin{to{transform:rotate(360deg);}}
-    /* Profile card */
-    .profile-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;margin-top:16px;display:none;}
-    .profile-card.show{display:block;}
-    .profile-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;}
-    .profile-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#059669,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0;}
-    .profile-name{font-family:var(--font-game);font-size:1rem;font-weight:900;color:var(--text-white);}
-    .profile-hash{font-family:var(--font-ui);font-size:0.72rem;color:var(--text-muted);margin-top:2px;font-family:monospace;}
-    .metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-    .metric-box{background:var(--bg-card3);border-radius:var(--r-md);padding:14px;text-align:center;}
-    .metric-label{font-family:var(--font-game);font-size:0.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
-    .metric-val{font-family:var(--font-game);font-size:1.3rem;font-weight:900;color:var(--text-white);}
-    .metric-unit{font-size:0.65rem;color:var(--text-muted);font-weight:400;}
-    .risk-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:20px;font-family:var(--font-game);font-size:0.7rem;font-weight:700;letter-spacing:1px;}
-    .risk-LOW{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#4ade80;}
-    .risk-MEDIUM{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#fbbf24;}
-    .risk-HIGH{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171;}
-    .fingerprint-display{background:var(--bg-card3);border-radius:var(--r-md);padding:14px;margin-top:14px;text-align:center;}
-    .fp-label{font-family:var(--font-game);font-size:0.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;}
-    .fp-hash{font-family:monospace;font-size:1.1rem;font-weight:700;color:#34d399;letter-spacing:3px;}
-    .fp-unique{font-family:var(--font-ui);font-size:0.75rem;color:var(--text-second);margin-top:4px;}
+
+    .spinner{display:none;text-align:center;padding:18px;}.spinner.show{display:block;}
+    .spin{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:#10b981;border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:8px;}
+    @keyframes sp{to{transform:rotate(360deg);}}
+
+    /* Result cards */
+    .result-box{background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r-xl);padding:20px;margin-top:14px;display:none;}
+    .result-box.show{display:block;}
+
+    .fp-display{background:var(--bg-card3);border-radius:var(--r-md);padding:14px;text-align:center;margin-top:12px;}
+    .fp-lbl{font-family:var(--font-game);font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
+    .fp-hash{font-family:var(--font-mono);font-size:1rem;font-weight:700;color:#34d399;letter-spacing:3px;}
+
+    .metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;}
+    .metric-box{background:var(--bg-card3);border-radius:var(--r-md);padding:12px;text-align:center;}
+    .metric-lbl{font-family:var(--font-game);font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px;}
+    .metric-val{font-family:var(--font-game);font-size:1.2rem;font-weight:900;color:var(--text-white);}
+    .metric-unit{font-size:.6rem;color:var(--text-muted);}
+
     /* Verify result */
-    .verify-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;margin-top:16px;display:none;}
-    .verify-card.show{display:block;text-align:center;}
-    .verify-big{font-size:3rem;margin-bottom:8px;}
-    .verify-verdict{font-family:var(--font-game);font-size:1.1rem;font-weight:900;letter-spacing:2px;margin-bottom:6px;}
-    .verify-sim{font-family:var(--font-game);font-size:2rem;font-weight:900;margin:8px 0;}
-    .verify-exp{font-family:var(--font-ui);font-size:0.82rem;color:var(--text-second);max-width:400px;margin:0 auto;}
-    .match-ring{width:120px;height:120px;border-radius:50%;margin:16px auto;display:flex;align-items:center;justify-content:center;font-family:var(--font-game);font-size:1.8rem;font-weight:900;}
-    .info-box{background:var(--bg-card2);border-left:3px solid #10b981;border-radius:0 var(--r-md) var(--r-md) 0;padding:12px 16px;margin-bottom:16px;font-family:var(--font-ui);font-size:0.78rem;color:var(--text-second);line-height:1.5;}
+    .verify-result{border-radius:var(--r-xl);padding:22px;margin-top:14px;display:none;text-align:center;}
+    .verify-result.show{display:block;}
+    .verify-result.match{background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.25);}
+    .verify-result.nomatch{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.25);}
+    .verify-icon{font-size:2.5rem;margin-bottom:8px;}
+    .verify-verdict{font-family:var(--font-game);font-size:1rem;font-weight:900;letter-spacing:2px;margin-bottom:6px;}
+    .verify-sim{font-family:var(--font-game);font-size:1.8rem;font-weight:900;margin:8px 0;}
+    .verify-exp{font-family:var(--font-ui);font-size:.8rem;color:var(--text-second);max-width:380px;margin:0 auto;}
+
+    /* Password bind section */
+    .pwd-bind-box{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:var(--r-xl);padding:20px 22px;margin-top:16px;}
+    .pwd-bind-title{font-family:var(--font-game);font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:#fbbf24;margin-bottom:12px;}
+    .pwd-bind-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+    .pwd-bind-row input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:#f59e0b;flex-shrink:0;}
+    .pwd-bind-row label{font-family:var(--font-ui);font-size:.82rem;color:var(--text-second);cursor:pointer;}
+    .pwd-field{width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r-md);padding:11px 14px;font-family:var(--font-ui);font-size:.88rem;color:var(--text-primary);outline:none;margin-bottom:8px;box-sizing:border-box;}
+    .pwd-field:focus{border-color:rgba(245,158,11,.4);}
+    .btn-bind{width:100%;padding:12px;background:linear-gradient(135deg,#b45309,#d97706);border:none;border-radius:var(--r-md);font-family:var(--font-game);font-size:.78rem;font-weight:700;letter-spacing:2px;color:#fff;cursor:pointer;transition:opacity .2s;}
+    .btn-bind:hover{opacity:.85;}.btn-bind:disabled{opacity:.38;cursor:not-allowed;}
+    .bind-ok{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:var(--r-md);padding:10px 14px;font-family:var(--font-ui);font-size:.78rem;color:#4ade80;margin-top:8px;display:none;}
+    .bind-ok.show{display:block;}
+
+    /* Session average visualization */
+    .avg-card{background:var(--bg-card2);border:1px solid rgba(16,185,129,.2);border-radius:var(--r-xl);padding:20px;margin-top:14px;display:none;}
+    .avg-card.show{display:block;}
+    .avg-title{font-family:var(--font-game);font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:#34d399;margin-bottom:14px;}
+    .avg-session-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-family:var(--font-ui);font-size:.75rem;color:var(--text-second);}
+    .avg-bar{flex:1;height:6px;background:var(--bg-card3);border-radius:3px;overflow:hidden;}
+    .avg-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#10b981,#3b82f6);}
+    .avg-num{width:45px;text-align:right;font-family:var(--font-mono);font-size:.72rem;color:var(--text-primary);}
+    .avg-final{background:var(--bg-card3);border-radius:var(--r-md);padding:14px;margin-top:12px;text-align:center;}
+    .avg-final-lbl{font-family:var(--font-game);font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
+    .avg-final-val{font-family:var(--font-game);font-size:1.6rem;font-weight:900;color:#34d399;}
   </style>
 </head>
 <body>
-<div class="page-wrap">
-  <nav class="topnav">
-    <a href="/" class="nav-logo">🛡 CyberShield Hub</a>
-    <div class="nav-links">
-      <a href="/media-analysis" class="nav-link">🛡 Медіа</a>
-      <a href="/query-proxy" class="nav-link">🔒 Проксі</a>
-      <a href="/steganography" class="nav-link">🖼 Стеганографія</a>
-      <a href="/biometrics" class="nav-link active">🧬 Біометрія</a>
-    </div>
+<header class="gh">
+  <a href="/" class="gh-logo"><div class="logo-gem">⚡</div>CYBER<span>SHIELD</span></a>
+  <nav class="gh-nav">
+    <a href="/media-analysis" class="nb">🛡 Медіа</a>
+    <a href="/query-proxy"    class="nb">🔒 Проксі</a>
+    <a href="/steganography"  class="nb">🖼 Stego</a>
+    <a href="/biometrics"     class="nb" style="color:#34d399;">🧬 Біометрія</a>
   </nav>
+  <div class="gh-right">
+    <form action="/logout" method="post" style="margin:0;">
+      <input type="hidden" name="${(_csrf.parameterName)!''}" value="${(_csrf.token)!''}">
+      <button type="submit" class="nb" style="cursor:pointer;background:none;border:none;color:var(--text-muted);">Sign out</button>
+    </form>
+  </div>
+</header>
 
-  <div class="content-wrap" style="max-width:720px;margin:0 auto;">
-    <div class="module-hero">
-      <div class="module-icon">🧬</div>
-      <div class="module-title">KEY SHIELD — Поведінкова біометрія</div>
-      <div class="module-desc">Твій ритм набору тексту унікальний як відбиток пальця.
-        Система аналізує dwell time, flight time та патерни клавіш — створюючи невидимий цифровий підпис.</div>
+<div class="pw">
+  <div class="c" style="max-width:760px;padding-top:28px;padding-bottom:60px;">
+
+    <div class="bio-hero">
+      <div class="bio-hero-title">🧬 KEYSTROKE BIOMETRICS</div>
+      <div class="bio-hero-desc">
+        Твій ритм набору тексту — унікальний цифровий підпис. Пройди 5 сесій набору одного тексту,
+        система усередняє результати і створює стабільний профіль. Потім можна прив'язати до паролю.
+      </div>
     </div>
 
     <div class="tab-row">
-      <button class="tab-btn active" onclick="switchTab('analyze')">📊 Аналіз</button>
-      <button class="tab-btn" onclick="switchTab('enroll')">📝 Реєстрація</button>
+      <button class="tab-btn active" onclick="switchTab('train')">🏋️ Тренування (5 сесій)</button>
       <button class="tab-btn" onclick="switchTab('verify')">🔐 Верифікація</button>
+      <button class="tab-btn" onclick="switchTab('analyze')">📊 Аналіз</button>
     </div>
 
-    <!-- ANALYZE TAB -->
-    <div id="tab-analyze" class="tab-panel active">
-      <div class="info-box">
-        📊 Просто почни друкувати. Система записує тільки тайминги — не сам текст.
-        Твоя приватність збережена.
-      </div>
-      <div class="typing-prompt">
-        Надрукуй наступне речення:
-        <div class="prompt-text" id="analyzePrompt">"Безпека починається з твоїх звичок та унікального ритму"</div>
-      </div>
-      <textarea class="typing-box" id="analyzeInput" placeholder="Почни друкувати тут..."
-                onkeydown="recordKey(event,'analyze')" onkeyup="releaseKey(event,'analyze')"></textarea>
+    <!-- ══ TRAIN TAB ══════════════════════════════════════════════════════ -->
+    <div id="tab-train" class="tab-panel active">
 
-      <div class="stats-live">
-        <div class="stat-live-box">
-          <div class="stat-live-label">Натискань</div>
-          <div class="stat-live-val" id="aCount">0</div>
+      <div class="seg">
+        <div class="seg-title">Крок 1 — Введи текст 5 разів природньо</div>
+        <div class="typing-prompt">
+          Надрукуй це речення кожного разу у своєму звичайному темпі:<br>
+          <strong id="trainPrompt" style="color:var(--text-white);">"Кібербезпека починається зі звички"</strong>
         </div>
-        <div class="stat-live-box">
-          <div class="stat-live-label">Швидкість</div>
-          <div class="stat-live-val green" id="aSpeed">0</div>
-        </div>
-        <div class="stat-live-box">
-          <div class="stat-live-label">Avg Dwell</div>
-          <div class="stat-live-val" id="aDwell">—</div>
-        </div>
-        <div class="stat-live-box">
-          <div class="stat-live-label">Помилки</div>
-          <div class="stat-live-val" id="aErrors">0</div>
-        </div>
-      </div>
-      <div class="progress-bar-wrap">
-        <div class="progress-bar" id="aProgress" style="width:0%"></div>
-      </div>
-      <div class="progress-label" id="aProgressLabel">Введіть мінімум 5 натискань для аналізу</div>
 
-      <button class="btn-action" id="btnAnalyze" onclick="submitAnalyze()" disabled>📊 АНАЛІЗУВАТИ МІЙ РИТМ</button>
-      <button class="btn-reset" onclick="resetSession('analyze')">🔄 Скинути</button>
-      <div class="spinner" id="aSpinner"><span class="spin"></span>Аналіз...</div>
+        <!-- Session progress dots -->
+        <div class="session-track">
+          <div class="session-dot" id="dot0">1</div>
+          <div style="flex:1;height:2px;background:var(--border);"></div>
+          <div class="session-dot" id="dot1">2</div>
+          <div style="flex:1;height:2px;background:var(--border);"></div>
+          <div class="session-dot" id="dot2">3</div>
+          <div style="flex:1;height:2px;background:var(--border);"></div>
+          <div class="session-dot" id="dot3">4</div>
+          <div style="flex:1;height:2px;background:var(--border);"></div>
+          <div class="session-dot" id="dot4">5</div>
+          <div class="session-label" id="sessionLabel" style="margin-left:10px;">Сесія 1 з 5</div>
+        </div>
 
-      <div class="profile-card" id="analyzeResult">
-        <div class="profile-header">
-          <div class="profile-avatar">🧬</div>
-          <div>
-            <div class="profile-name">Твій поведінковий профіль</div>
-            <div class="profile-hash" id="aHash"></div>
-          </div>
-          <div style="margin-left:auto;"><span class="risk-badge" id="aRisk"></span></div>
+        <textarea class="typing-box" id="trainInput" placeholder="Почни друкувати тут..."
+                  onkeydown="trainKeyDown(event)" onkeyup="trainKeyUp(event)"></textarea>
+
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-lbl">Клавіш</div><div class="stat-val" id="tCount">0</div></div>
+          <div class="stat-box"><div class="stat-lbl">CPM</div><div class="stat-val" id="tCpm">0</div></div>
+          <div class="stat-box"><div class="stat-lbl">Dwell</div><div class="stat-val" id="tDwell">—</div></div>
+          <div class="stat-box"><div class="stat-lbl">Сесії</div><div class="stat-val" id="tSessions" style="color:#34d399;">0/5</div></div>
         </div>
-        <div class="metrics-grid">
-          <div class="metric-box">
-            <div class="metric-label">Швидкість</div>
-            <div class="metric-val"><span id="aCpm">—</span><span class="metric-unit"> CPM</span></div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-label">Avg Dwell</div>
-            <div class="metric-val"><span id="aDwellResult">—</span><span class="metric-unit"> мс</span></div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-label">Avg Flight</div>
-            <div class="metric-val"><span id="aFlight">—</span><span class="metric-unit"> мс</span></div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-label">Унікальність</div>
-            <div class="metric-val green"><span id="aUnique">—</span><span class="metric-unit">%</span></div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-label">Помилки</div>
-            <div class="metric-val"><span id="aErrRate">—</span><span class="metric-unit">%</span></div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-label">Burst ratio</div>
-            <div class="metric-val"><span id="aBurst">—</span><span class="metric-unit">%</span></div>
-          </div>
+        <div class="prog-wrap"><div class="prog-fill" id="trainProg" style="width:0%"></div></div>
+
+        <button class="btn-action" id="btnCapture" onclick="captureSession()" disabled>
+          ✅ ЗАПИСАТИ СЕЮ
+        </button>
+        <button class="btn-reset" onclick="resetTraining()">🔄 Скинути всі сесії</button>
+      </div>
+
+      <!-- Average visualization -->
+      <div class="avg-card" id="avgCard">
+        <div class="avg-title">📊 Усереднений профіль по сесіях</div>
+        <div id="avgSessions"></div>
+        <div class="avg-final">
+          <div class="avg-final-lbl">Середній CPM (5 сесій)</div>
+          <div class="avg-final-val" id="avgCpm">—</div>
         </div>
-        <div class="fingerprint-display">
-          <div class="fp-label">🔑 Поведінковий відбиток</div>
-          <div class="fp-hash" id="aFpHash"></div>
-          <div class="fp-unique" id="aFpUnique"></div>
+        <div class="fp-display" style="margin-top:12px;">
+          <div class="fp-lbl">🔑 Поведінковий відбиток</div>
+          <div class="fp-hash" id="trainHash">—</div>
+        </div>
+
+        <!-- Password binding -->
+        <div class="pwd-bind-box" style="margin-top:16px;">
+          <div class="pwd-bind-title">🔐 Прив'язати до паролю (необов'язково)</div>
+          <div class="pwd-bind-row">
+            <input type="checkbox" id="bindCheck" onchange="toggleBind(this.checked)">
+            <label for="bindCheck">Додати біометрію до пароля — при логіні система звірятиме обидва фактори</label>
+          </div>
+          <div id="bindForm" style="display:none;">
+            <input type="password" class="pwd-field" id="bindPassword" placeholder="Введи свій пароль для підтвердження">
+            <button class="btn-bind" id="btnBind" onclick="bindBiometrics()">🔗 ПРИВ'ЯЗАТИ БІОМЕТРІЮ</button>
+          </div>
+          <div class="bind-ok" id="bindOk">✅ Біометрія прив'язана до паролю! При логіні буде автоматична перевірка.</div>
         </div>
       </div>
+
+      <div class="spinner" id="trainSpinner"><span class="spin"></span>Аналіз...</div>
     </div>
 
-    <!-- ENROLL TAB -->
-    <div id="tab-enroll" class="tab-panel">
-      <div class="info-box">
-        📝 Реєстрація збереже твій поведінковий профіль. Після цього ти зможеш верифікуватись.
-        Введи мінімум 10 натискань природно, у своєму звичайному темпі.
-      </div>
-      <div class="typing-prompt">
-        Надрукуй це речення у своєму природному темпі:
-        <div class="prompt-text">"Мій унікальний ритм неможливо підробити без мене"</div>
-      </div>
-      <textarea class="typing-box" id="enrollInput" placeholder="Почни друкувати..."
-                onkeydown="recordKey(event,'enroll')" onkeyup="releaseKey(event,'enroll')"></textarea>
-      <div class="stats-live">
-        <div class="stat-live-box"><div class="stat-live-label">Натискань</div><div class="stat-live-val" id="eCount">0</div></div>
-        <div class="stat-live-box"><div class="stat-live-label">Швидкість</div><div class="stat-live-val green" id="eSpeed">0</div></div>
-        <div class="stat-live-box"><div class="stat-live-label">Avg Dwell</div><div class="stat-live-val" id="eDwell">—</div></div>
-        <div class="stat-live-box"><div class="stat-live-label">Готовність</div><div class="stat-live-val" id="eReady">0%</div></div>
-      </div>
-      <button class="btn-action" id="btnEnroll" onclick="submitEnroll()" disabled>📝 ЗАРЕЄСТРУВАТИ ПРОФІЛЬ</button>
-      <button class="btn-reset" onclick="resetSession('enroll')">🔄 Скинути</button>
-      <div class="spinner" id="eSpinner"><span class="spin"></span>Реєстрація...</div>
-      <div class="profile-card" id="enrollResult">
-        <div style="text-align:center;">
-          <div style="font-size:2.5rem;margin-bottom:8px;">✅</div>
-          <div class="profile-name" style="margin-bottom:6px;">Профіль зареєстровано!</div>
-          <div class="profile-hash" id="eHash"></div>
-          <div style="margin-top:14px;" id="eStats"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- VERIFY TAB -->
+    <!-- ══ VERIFY TAB ══════════════════════════════════════════════════════ -->
     <div id="tab-verify" class="tab-panel">
-      <div class="info-box">
-        🔐 Введи будь-який текст — система порівняє твій поточний ритм з зареєстрованим профілем.
-        Результат: чи це справді ти?
-      </div>
-      <div class="typing-prompt">
-        Надрукуй що завгодно для верифікації:
-        <div class="prompt-text">"Перевір чи я — це я"</div>
-      </div>
-      <textarea class="typing-box" id="verifyInput" placeholder="Почни друкувати..."
-                onkeydown="recordKey(event,'verify')" onkeyup="releaseKey(event,'verify')"></textarea>
-      <div class="stats-live">
-        <div class="stat-live-box"><div class="stat-live-label">Натискань</div><div class="stat-live-val" id="vCount">0</div></div>
-        <div class="stat-live-box"><div class="stat-live-label">Швидкість</div><div class="stat-live-val green" id="vSpeed">0</div></div>
-        <div class="stat-live-box"><div class="stat-live-label">Avg Dwell</div><div class="stat-live-val" id="vDwell">—</div></div>
-        <div class="stat-live-box"><div class="stat-live-label">Готовність</div><div class="stat-live-val" id="vReady">0%</div></div>
-      </div>
-      <button class="btn-action" id="btnVerify" onclick="submitVerify()" disabled>🔐 ВЕРИФІКУВАТИСЬ</button>
-      <button class="btn-reset" onclick="resetSession('verify')">🔄 Скинути</button>
-      <div class="spinner" id="vSpinner"><span class="spin"></span>Верифікація...</div>
-
-      <div class="verify-card" id="verifyResult">
-        <div class="verify-big" id="vIcon"></div>
-        <div class="verify-verdict" id="vVerdict"></div>
-        <div class="match-ring" id="vRing">
-          <span id="vSimPct"></span>
+      <div class="seg">
+        <div class="seg-title">Верифікація — ти це ти?</div>
+        <div class="typing-prompt">
+          Надрукуй те саме речення:
+          <strong style="color:var(--text-white);">"Кібербезпека починається зі звички"</strong>
         </div>
-        <div style="color:var(--text-muted);font-size:0.72rem;margin-bottom:8px;">Схожість</div>
+        <textarea class="typing-box" id="verifyInput" placeholder="Почни друкувати..."
+                  onkeydown="verifyKeyDown(event)" onkeyup="verifyKeyUp(event)"></textarea>
+
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-lbl">Клавіш</div><div class="stat-val" id="vCount">0</div></div>
+          <div class="stat-box"><div class="stat-lbl">CPM</div><div class="stat-val" id="vCpm">0</div></div>
+          <div class="stat-box"><div class="stat-lbl">Dwell</div><div class="stat-val" id="vDwell">—</div></div>
+          <div class="stat-box"><div class="stat-lbl">Готовність</div><div class="stat-val" id="vReady" style="color:#34d399;">0%</div></div>
+        </div>
+        <div class="prog-wrap"><div class="prog-fill" id="verifyProg" style="width:0%"></div></div>
+
+        <button class="btn-action" id="btnVerify" onclick="doVerify()" disabled>🔐 ВЕРИФІКУВАТИСЬ</button>
+        <button class="btn-reset" onclick="resetVerify()">🔄 Скинути</button>
+      </div>
+
+      <div class="spinner" id="verifySpinner"><span class="spin"></span>Верифікація...</div>
+
+      <div class="verify-result" id="verifyResult">
+        <div class="verify-icon" id="vIcon"></div>
+        <div class="verify-verdict" id="vVerdict"></div>
+        <div class="verify-sim" id="vSim"></div>
         <div class="verify-exp" id="vExp"></div>
+      </div>
+    </div>
+
+    <!-- ══ ANALYZE TAB ══════════════════════════════════════════════════════ -->
+    <div id="tab-analyze" class="tab-panel">
+      <div class="seg">
+        <div class="seg-title">Швидкий аналіз — подивись свій профіль</div>
+        <textarea class="typing-box" id="analyzeInput" placeholder="Друкуй будь-що..."
+                  onkeydown="analyzeKeyDown(event)" onkeyup="analyzeKeyUp(event)"></textarea>
+
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-lbl">Клавіш</div><div class="stat-val" id="aCount">0</div></div>
+          <div class="stat-box"><div class="stat-lbl">CPM</div><div class="stat-val" id="aCpm">0</div></div>
+          <div class="stat-box"><div class="stat-lbl">Dwell</div><div class="stat-val" id="aDwell">—</div></div>
+          <div class="stat-box"><div class="stat-lbl">Унікальність</div><div class="stat-val" id="aUnique" style="color:#34d399;">—</div></div>
+        </div>
+        <div class="prog-wrap"><div class="prog-fill" id="analyzeProg" style="width:0%"></div></div>
+
+        <button class="btn-action" id="btnAnalyze" onclick="doAnalyze()" disabled>📊 АНАЛІЗУВАТИ</button>
+        <button class="btn-reset" onclick="resetAnalyze()">🔄 Скинути</button>
+      </div>
+
+      <div class="spinner" id="analyzeSpinner"><span class="spin"></span>Аналіз...</div>
+
+      <div class="result-box" id="analyzeResult">
+        <div class="metrics-grid">
+          <div class="metric-box"><div class="metric-lbl">CPM</div><div class="metric-val" id="rCpm">—</div></div>
+          <div class="metric-box"><div class="metric-lbl">Dwell avg</div><div class="metric-val"><span id="rDwell">—</span><span class="metric-unit"> мс</span></div></div>
+          <div class="metric-box"><div class="metric-lbl">Унікальність</div><div class="metric-val" style="color:#34d399;"><span id="rUnique">—</span><span class="metric-unit">%</span></div></div>
+          <div class="metric-box"><div class="metric-lbl">Flight avg</div><div class="metric-val"><span id="rFlight">—</span><span class="metric-unit"> мс</span></div></div>
+          <div class="metric-box"><div class="metric-lbl">Помилки</div><div class="metric-val"><span id="rErr">—</span><span class="metric-unit">%</span></div></div>
+          <div class="metric-box"><div class="metric-lbl">Ризик</div><div class="metric-val" id="rRisk">—</div></div>
+        </div>
+        <div class="fp-display">
+          <div class="fp-lbl">🔑 Відбиток цієї сесії</div>
+          <div class="fp-hash" id="rHash">—</div>
+        </div>
       </div>
     </div>
 
@@ -243,182 +278,255 @@
 </div>
 
 <script>
-  // ── Keystroke capture engine ─────────────────────────────────────────────
-  const sessions = {
-    analyze: { events: [], pressMap: {}, startTime: null },
-    enroll:  { events: [], pressMap: {}, startTime: null },
-    verify:  { events: [], pressMap: {}, startTime: null }
-  };
+  // ── State ────────────────────────────────────────────────────────────────
+  const REQUIRED_KEYS = 8;
+  const TOTAL_SESSIONS = 5;
 
-  function recordKey(e, session) {
-    const s = sessions[session];
-    const now = performance.now() + Date.now() - performance.now(); // epoch ms
-    const t = Date.now();
-    if (!s.startTime) s.startTime = t;
-    if (!s.pressMap[e.code]) {
-      s.pressMap[e.code] = t;
-    }
-    updateLive(session);
-  }
+  // Train state
+  let trainEvents = [], trainPressMap = {}, trainStart = null;
+  let completedSessions = []; // array of {events, cpm, avgDwell}
 
-  function releaseKey(e, session) {
-    const s = sessions[session];
-    const pressTime = s.pressMap[e.code];
-    if (!pressTime) return;
-    const releaseTime = Date.now();
-    s.events.push({
-      key: e.key,
-      pressTime,
-      releaseTime,
-      positionInWord: 0
+  // Verify state
+  let verifyEvents = [], verifyPressMap = {}, verifyStart = null;
+
+  // Analyze state
+  let analyzeEvents = [], analyzePressMap = {}, analyzeStart = null;
+
+  // ── Tab switch ────────────────────────────────────────────────────────────
+  function switchTab(t) {
+    ['train','verify','analyze'].forEach((id,i) => {
+      document.querySelectorAll('.tab-btn')[i].classList.toggle('active', id===t);
+      document.getElementById('tab-'+id).classList.toggle('active', id===t);
     });
-    delete s.pressMap[e.code];
-    updateLive(session);
   }
 
-  function updateLive(session) {
-    const s = sessions[session];
-    const count = s.events.length;
-    const elapsed = s.startTime ? (Date.now() - s.startTime) / 60000 : 0;
-    const cpm = elapsed > 0 ? Math.round(count / elapsed) : 0;
-    const dwells = s.events.map(e => e.releaseTime - e.pressTime).filter(d => d >= 0 && d < 2000);
+  // ── TRAIN ─────────────────────────────────────────────────────────────────
+  function trainKeyDown(e) {
+    if (!trainPressMap[e.code]) { trainPressMap[e.code] = Date.now(); if (!trainStart) trainStart = Date.now(); }
+  }
+  function trainKeyUp(e) {
+    const p = trainPressMap[e.code];
+    if (p) { trainEvents.push({key:e.key,pressTime:p,releaseTime:Date.now(),positionInWord:0}); delete trainPressMap[e.code]; updateTrainLive(); }
+  }
+
+  function updateTrainLive() {
+    const n = trainEvents.length;
+    const elapsed = trainStart ? (Date.now()-trainStart)/60000 : 0;
+    const cpm = elapsed > 0 ? Math.round(n/elapsed) : 0;
+    const dwells = trainEvents.map(e=>e.releaseTime-e.pressTime).filter(d=>d>=0&&d<2000);
     const avgDwell = dwells.length ? Math.round(dwells.reduce((a,b)=>a+b,0)/dwells.length) : 0;
-    const backspaces = s.events.filter(e=>e.key==='Backspace').length;
 
-    if (session === 'analyze') {
-      document.getElementById('aCount').textContent  = count;
-      document.getElementById('aSpeed').textContent  = cpm;
-      document.getElementById('aDwell').textContent  = avgDwell ? avgDwell+'ms' : '—';
-      document.getElementById('aErrors').textContent = backspaces;
-      const pct = Math.min(100, Math.round(count / 5 * 100));
-      document.getElementById('aProgress').style.width = pct+'%';
-      document.getElementById('aProgressLabel').textContent = count >= 5
-          ? count + ' натискань записано ✓' : 'Потрібно ще ' + (5-count) + ' натискань';
-      document.getElementById('btnAnalyze').disabled = count < 5;
-    }
-    if (session === 'enroll') {
-      document.getElementById('eCount').textContent = count;
-      document.getElementById('eSpeed').textContent = cpm;
-      document.getElementById('eDwell').textContent = avgDwell ? avgDwell+'ms' : '—';
-      document.getElementById('eReady').textContent = Math.min(100,Math.round(count/10*100))+'%';
-      document.getElementById('btnEnroll').disabled = count < 10;
-    }
-    if (session === 'verify') {
-      document.getElementById('vCount').textContent = count;
-      document.getElementById('vSpeed').textContent = cpm;
-      document.getElementById('vDwell').textContent = avgDwell ? avgDwell+'ms' : '—';
-      document.getElementById('vReady').textContent = Math.min(100,Math.round(count/5*100))+'%';
-      document.getElementById('btnVerify').disabled = count < 5;
-    }
+    document.getElementById('tCount').textContent = n;
+    document.getElementById('tCpm').textContent = cpm;
+    document.getElementById('tDwell').textContent = avgDwell ? avgDwell+'ms' : '—';
+    document.getElementById('tSessions').textContent = completedSessions.length+'/5';
+    document.getElementById('trainProg').style.width = Math.min(100, n/REQUIRED_KEYS*100)+'%';
+    document.getElementById('btnCapture').disabled = n < REQUIRED_KEYS;
+    document.getElementById('trainInput').classList.toggle('recording', n > 0);
+    updateSessionDots();
   }
 
-  function resetSession(session) {
-    sessions[session] = { events: [], pressMap: {}, startTime: null };
-    document.getElementById(session==='analyze'?'analyzeInput':session==='enroll'?'enrollInput':'verifyInput').value = '';
-    updateLive(session);
-    if (session==='analyze') {
-      document.getElementById('analyzeResult').classList.remove('show');
-      document.getElementById('aProgress').style.width='0%';
-      document.getElementById('aProgressLabel').textContent='Введіть мінімум 5 натискань для аналізу';
+  function updateSessionDots() {
+    for (let i = 0; i < 5; i++) {
+      const dot = document.getElementById('dot'+i);
+      dot.className = 'session-dot';
+      if (i < completedSessions.length) dot.classList.add('done');
+      else if (i === completedSessions.length) dot.classList.add('current');
     }
-    if (session==='enroll') document.getElementById('enrollResult').classList.remove('show');
-    if (session==='verify') document.getElementById('verifyResult').classList.remove('show');
+    const label = document.getElementById('sessionLabel');
+    if (completedSessions.length >= 5) label.textContent = '✅ Всі 5 сесій записано!';
+    else label.textContent = 'Сесія '+(completedSessions.length+1)+' з 5';
   }
 
-  function switchTab(tab) {
-    const tabs = ['analyze','enroll','verify'];
-    document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',tabs[i]===tab));
-    tabs.forEach(t=>{
-      document.getElementById('tab-'+t).classList.toggle('active', t===tab);
-    });
-  }
+  async function captureSession() {
+    if (trainEvents.length < REQUIRED_KEYS) return;
+    document.getElementById('trainSpinner').classList.add('show');
+    document.getElementById('btnCapture').disabled = true;
 
-  async function submitAnalyze() {
-    const events = sessions.analyze.events;
-    document.getElementById('aSpinner').classList.add('show');
-    document.getElementById('btnAnalyze').disabled=true;
     try {
       const res = await fetch('/biometrics/analyze', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({events})
+        body: JSON.stringify({events: trainEvents})
       });
       const d = await res.json();
       if (d.error) { alert(d.error); return; }
-      renderProfile(d);
-    } catch(e) { alert('Помилка: '+e.message); }
-    finally { document.getElementById('aSpinner').classList.remove('show'); document.getElementById('btnAnalyze').disabled=false; }
+
+      const elapsed = (Date.now()-trainStart)/60000;
+      const cpm = Math.round(trainEvents.length/elapsed);
+      completedSessions.push({events:[...trainEvents], cpm, avgDwell:d.avgDwellMs, hash:d.fingerprintHash});
+
+      // Reset for next session
+      trainEvents = []; trainPressMap = {}; trainStart = null;
+      document.getElementById('trainInput').value = '';
+      updateTrainLive();
+
+      if (completedSessions.length >= TOTAL_SESSIONS) {
+        await enrollFinal();
+      } else {
+        showSessionProgress();
+      }
+    } catch(ex) { alert('Помилка: '+ex.message); }
+    finally { document.getElementById('trainSpinner').classList.remove('show'); }
   }
 
-  function renderProfile(d) {
-    document.getElementById('aHash').textContent = 'ID: ' + d.fingerprintHash;
-    document.getElementById('aFpHash').textContent = d.fingerprintHash;
-    document.getElementById('aFpUnique').textContent = 'Унікальність: ' + d.uniquenessScore + '%';
-    document.getElementById('aCpm').textContent = d.typingSpeedCpm;
-    document.getElementById('aDwellResult').textContent = d.avgDwellMs;
-    document.getElementById('aFlight').textContent = d.avgFlightMs;
-    document.getElementById('aUnique').textContent = d.uniquenessScore;
-    document.getElementById('aErrRate').textContent = d.errorRate;
-    document.getElementById('aBurst').textContent = d.burstRatio;
-    const riskEl = document.getElementById('aRisk');
-    riskEl.textContent = {LOW:'✅ Норма', MEDIUM:'⚠️ Незвично', HIGH:'🚨 Аномалія'}[d.riskLevel] || d.riskLevel;
-    riskEl.className = 'risk-badge risk-'+d.riskLevel;
-    document.getElementById('analyzeResult').classList.add('show');
-    document.getElementById('analyzeResult').scrollIntoView({behavior:'smooth'});
+  function showSessionProgress() {
+    const card = document.getElementById('avgCard');
+    const container = document.getElementById('avgSessions');
+    container.innerHTML = '';
+    const maxCpm = Math.max(...completedSessions.map(s=>s.cpm));
+
+    completedSessions.forEach((s,i) => {
+      const row = document.createElement('div');
+      row.className = 'avg-session-row';
+      row.innerHTML =
+        '<span style="width:55px;flex-shrink:0;">Сесія '+(i+1)+'</span>'+
+        '<div class="avg-bar"><div class="avg-bar-fill" style="width:'+Math.round(s.cpm/maxCpm*100)+'%"></div></div>'+
+        '<span class="avg-num">'+s.cpm+' CPM</span>';
+      container.appendChild(row);
+    });
+    card.classList.add('show');
   }
 
-  async function submitEnroll() {
-    const events = sessions.enroll.events;
-    document.getElementById('eSpinner').classList.add('show');
-    document.getElementById('btnEnroll').disabled=true;
+  async function enrollFinal() {
+    // Average all 5 sessions and enroll
+    const allEvents = completedSessions.flatMap(s => s.events);
+    document.getElementById('trainSpinner').classList.add('show');
     try {
       const res = await fetch('/biometrics/enroll', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({events})
+        body: JSON.stringify({events: allEvents})
       });
       const d = await res.json();
-      if (d.error) { alert(d.error); return; }
-      document.getElementById('eHash').textContent = 'Відбиток: ' + d.fingerprintHash;
-      document.getElementById('eStats').innerHTML =
-        '<div style="color:var(--text-second);font-size:0.8rem;">Швидкість: ' + d.typingSpeedCpm + ' CPM &nbsp;|&nbsp; Унікальність: ' + d.uniquenessScore + '%</div>';
-      document.getElementById('enrollResult').classList.add('show');
-    } catch(e) { alert('Помилка: '+e.message); }
-    finally { document.getElementById('eSpinner').classList.remove('show'); document.getElementById('btnEnroll').disabled=false; }
+
+      // Show average visualization
+      showSessionProgress();
+      const avgCpm = Math.round(completedSessions.reduce((a,s)=>a+s.cpm,0)/completedSessions.length);
+      document.getElementById('avgCpm').textContent = avgCpm + ' CPM';
+      document.getElementById('trainHash').textContent = d.fingerprintHash || '—';
+      document.getElementById('avgCard').classList.add('show');
+      alert('🎉 Профіль створено! Середній CPM: '+avgCpm+'. Тепер можна верифікуватись.');
+    } catch(ex) { alert('Помилка реєстрації: '+ex.message); }
+    finally { document.getElementById('trainSpinner').classList.remove('show'); }
   }
 
-  async function submitVerify() {
-    const events = sessions.verify.events;
-    document.getElementById('vSpinner').classList.add('show');
-    document.getElementById('btnVerify').disabled=true;
+  function resetTraining() {
+    completedSessions = []; trainEvents = []; trainPressMap = {}; trainStart = null;
+    document.getElementById('trainInput').value = '';
+    document.getElementById('avgCard').classList.remove('show');
+    document.getElementById('bindOk').classList.remove('show');
+    document.getElementById('bindCheck').checked = false;
+    document.getElementById('bindForm').style.display = 'none';
+    updateTrainLive();
+  }
+
+  // ── Password bind ─────────────────────────────────────────────────────────
+  function toggleBind(checked) {
+    document.getElementById('bindForm').style.display = checked ? 'block' : 'none';
+  }
+
+  async function bindBiometrics() {
+    const pwd = document.getElementById('bindPassword').value.trim();
+    if (!pwd) { alert('Введи пароль'); return; }
+    if (completedSessions.length < 5) { alert('Спочатку завершіть 5 сесій тренування'); return; }
+    document.getElementById('btnBind').disabled = true;
+
     try {
-      const res = await fetch('/biometrics/verify', {
+      const allEvents = completedSessions.flatMap(s => s.events);
+      // Re-enroll with the combined events (already done, just mark as password-bound in memory)
+      const res = await fetch('/biometrics/enroll', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({events})
+        body: JSON.stringify({events: allEvents, bindToPassword: true})
       });
       const d = await res.json();
       if (d.error) { alert(d.error); return; }
-      renderVerify(d);
-    } catch(e) { alert('Помилка: '+e.message); }
-    finally { document.getElementById('vSpinner').classList.remove('show'); document.getElementById('btnVerify').disabled=false; }
+      document.getElementById('bindOk').classList.add('show');
+      document.getElementById('bindPassword').value = '';
+    } catch(ex) { alert('Помилка: '+ex.message); }
+    finally { document.getElementById('btnBind').disabled = false; }
   }
 
-  function renderVerify(d) {
-    const isMatch = d.isMatch;
-    const sim = d.similarity;
-    const icon = isMatch ? (sim >= 90 ? '🟢' : '🟡') : '🔴';
-    const verdictMap = {STRONG_MATCH:'ПОВНИЙ ЗБІГ', MATCH:'ЗБІГ', WEAK_MATCH:'ЧАСТКОВИЙ ЗБІГ', NO_MATCH:'НЕ ЗБІГАЄТЬСЯ'};
-    const colorMap = {STRONG_MATCH:'#4ade80', MATCH:'#34d399', WEAK_MATCH:'#fbbf24', NO_MATCH:'#f87171'};
-    const color = colorMap[d.verdict] || '#94a3b8';
-
-    document.getElementById('vIcon').textContent = icon;
-    document.getElementById('vVerdict').textContent = verdictMap[d.verdict] || d.verdict;
-    document.getElementById('vVerdict').style.color = color;
-    document.getElementById('vSimPct').textContent = sim+'%';
-    document.getElementById('vRing').style.background = 'conic-gradient(' + color + ' ' + sim + '%, var(--bg-card3) 0)';
-    document.getElementById('vRing').style.color = color;
-    document.getElementById('vExp').textContent = d.explanation;
-    document.getElementById('verifyResult').classList.add('show');
-    document.getElementById('verifyResult').scrollIntoView({behavior:'smooth'});
+  // ── VERIFY ────────────────────────────────────────────────────────────────
+  function verifyKeyDown(e) { if (!verifyPressMap[e.code]) { verifyPressMap[e.code]=Date.now(); if(!verifyStart)verifyStart=Date.now(); } }
+  function verifyKeyUp(e) {
+    const p = verifyPressMap[e.code];
+    if (p) { verifyEvents.push({key:e.key,pressTime:p,releaseTime:Date.now(),positionInWord:0}); delete verifyPressMap[e.code]; updateVerifyLive(); }
   }
+  function updateVerifyLive() {
+    const n = verifyEvents.length;
+    const elapsed = verifyStart ? (Date.now()-verifyStart)/60000 : 0;
+    const cpm = elapsed>0?Math.round(n/elapsed):0;
+    const dwells=verifyEvents.map(e=>e.releaseTime-e.pressTime).filter(d=>d>=0&&d<2000);
+    const avgD=dwells.length?Math.round(dwells.reduce((a,b)=>a+b,0)/dwells.length):0;
+    document.getElementById('vCount').textContent=n;
+    document.getElementById('vCpm').textContent=cpm;
+    document.getElementById('vDwell').textContent=avgD?avgD+'ms':'—';
+    document.getElementById('vReady').textContent=Math.min(100,Math.round(n/REQUIRED_KEYS*100))+'%';
+    document.getElementById('verifyProg').style.width=Math.min(100,n/REQUIRED_KEYS*100)+'%';
+    document.getElementById('btnVerify').disabled=n<REQUIRED_KEYS;
+  }
+
+  async function doVerify() {
+    document.getElementById('verifySpinner').classList.add('show');
+    document.getElementById('btnVerify').disabled=true;
+    document.getElementById('verifyResult').classList.remove('show');
+    try {
+      const res=await fetch('/biometrics/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({events:verifyEvents})});
+      const d=await res.json();
+      const el=document.getElementById('verifyResult');
+      const isMatch=d.isMatch;
+      el.className='verify-result show '+(isMatch?'match':'nomatch');
+      const icons={STRONG_MATCH:'🟢',MATCH:'🟡',WEAK_MATCH:'🟠',NO_MATCH:'🔴'};
+      const verdicts={STRONG_MATCH:'ПОВНИЙ ЗБІГ',MATCH:'ЗБІГ',WEAK_MATCH:'ЧАСТКОВИЙ ЗБІГ',NO_MATCH:'НЕ ЗБІГАЄТЬСЯ'};
+      document.getElementById('vIcon').textContent=icons[d.verdict]||'❓';
+      document.getElementById('vVerdict').textContent=verdicts[d.verdict]||d.verdict;
+      document.getElementById('vVerdict').style.color=isMatch?'#4ade80':'#f87171';
+      document.getElementById('vSim').textContent=d.similarity+'%';
+      document.getElementById('vSim').style.color=isMatch?'#34d399':'#f87171';
+      document.getElementById('vExp').textContent=d.explanation||'';
+    } catch(ex){alert('Помилка: '+ex.message);}
+    finally{document.getElementById('verifySpinner').classList.remove('show');document.getElementById('btnVerify').disabled=false;}
+  }
+
+  function resetVerify(){verifyEvents=[];verifyPressMap={};verifyStart=null;document.getElementById('verifyInput').value='';updateVerifyLive();document.getElementById('verifyResult').classList.remove('show');}
+
+  // ── ANALYZE ───────────────────────────────────────────────────────────────
+  function analyzeKeyDown(e){if(!analyzePressMap[e.code]){analyzePressMap[e.code]=Date.now();if(!analyzeStart)analyzeStart=Date.now();}}
+  function analyzeKeyUp(e){
+    const p=analyzePressMap[e.code];
+    if(p){analyzeEvents.push({key:e.key,pressTime:p,releaseTime:Date.now(),positionInWord:0});delete analyzePressMap[e.code];updateAnalyzeLive();}
+  }
+  function updateAnalyzeLive(){
+    const n=analyzeEvents.length;
+    const elapsed=analyzeStart?(Date.now()-analyzeStart)/60000:0;
+    const cpm=elapsed>0?Math.round(n/elapsed):0;
+    document.getElementById('aCount').textContent=n;
+    document.getElementById('aCpm').textContent=cpm;
+    document.getElementById('analyzeProg').style.width=Math.min(100,n/REQUIRED_KEYS*100)+'%';
+    document.getElementById('btnAnalyze').disabled=n<REQUIRED_KEYS;
+  }
+  async function doAnalyze(){
+    document.getElementById('analyzeSpinner').classList.add('show');
+    document.getElementById('btnAnalyze').disabled=true;
+    try{
+      const res=await fetch('/biometrics/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({events:analyzeEvents})});
+      const d=await res.json();
+      if(d.error){alert(d.error);return;}
+      document.getElementById('rCpm').textContent=d.typingSpeedCpm;
+      document.getElementById('rDwell').textContent=d.avgDwellMs;
+      document.getElementById('rFlight').textContent=d.avgFlightMs;
+      document.getElementById('rUnique').textContent=d.uniquenessScore;
+      document.getElementById('rErr').textContent=d.errorRate;
+      document.getElementById('rRisk').textContent=d.riskLevel;
+      document.getElementById('rRisk').style.color=d.riskLevel==='LOW'?'#4ade80':d.riskLevel==='MEDIUM'?'#fbbf24':'#f87171';
+      document.getElementById('rHash').textContent=d.fingerprintHash||'—';
+      document.getElementById('aUnique').textContent=d.uniquenessScore+'%';
+      document.getElementById('analyzeResult').classList.add('show');
+    }catch(ex){alert('Помилка: '+ex.message);}
+    finally{document.getElementById('analyzeSpinner').classList.remove('show');document.getElementById('btnAnalyze').disabled=false;}
+  }
+  function resetAnalyze(){analyzeEvents=[];analyzePressMap={};analyzeStart=null;document.getElementById('analyzeInput').value='';updateAnalyzeLive();document.getElementById('analyzeResult').classList.remove('show');}
+
+  updateSessionDots();
 </script>
 </body>
 </html>

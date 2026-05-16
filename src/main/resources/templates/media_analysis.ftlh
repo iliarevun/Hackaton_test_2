@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Аналіз медіа — Media Shield</title>
+
+  <meta name="_csrf" content="${_csrf.token}"/>
+  <meta name="_csrf_header" content="${_csrf.headerName}"/>
+
   <link rel="stylesheet" href="/game.css">
   <style>
     .module-hero{background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(245,158,11,.08));border:1px solid rgba(239,68,68,.25);border-radius:var(--r-xl);padding:28px 32px;margin-bottom:24px;}
@@ -186,19 +190,34 @@
   function onFileSelected(){const f=document.getElementById('fileInput').files[0];if(f){selectedFile=f;document.getElementById('fileName').textContent='📄 '+f.name;}}
 
   async function analyzeText() {
-    const text = document.getElementById('textInput').value.trim();
-    if (!text || text.length < 30) { alert('Введіть текст мінімум 30 символів'); return; }
-    setLoading(true);
-    try {
-      const res = await fetch('/media-analysis/analyze', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({text})
-      });
-      const data = await res.json();
-      renderResult(data);
-    } catch(e) { alert('Помилка: '+e.message); }
-    finally { setLoading(false); }
+  const text = document.getElementById('textInput').value.trim();
+  if (!text || text.length < 30) { alert('Введіть текст мінімум 30 символів'); return; }
+  setLoading(true);
+  try {
+    const res = await fetch('/media-analysis/analyze', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text})
+    });
+
+    if (!res.ok) {
+      throw new Error('Сервер повернув статус ' + res.status);
+    }
+
+    const data = await res.json();
+
+    // Якщо сервер повернув помилку всередині JSON
+    if (data.error) {
+      alert('Помилка сервісу: ' + data.error);
+      return;
+    }
+
+    renderResult(data);
+  } catch(e) {
+    alert('Помилка зв\'язку з сервером: ' + e.message);
+  } finally {
+    setLoading(false);
   }
+}
 
   async function analyzeFile() {
     if (!selectedFile) { alert('Оберіть файл'); return; }
@@ -226,59 +245,85 @@
     return '#f87171';
   }
 
-  function renderResult(d) {
-    if (d.error) { alert('Помилка: '+d.error); return; }
-    const risk = d.overallRisk || 'UNKNOWN';
-    const riskLabels = {LOW:'✅ НИЗЬКИЙ РИЗИК', MEDIUM:'⚠️ СЕРЕДНІЙ РИЗИК', HIGH:'🚨 ВИСОКИЙ РИЗИК', UNKNOWN:'❓ НЕВІДОМО'};
-    const badge = document.getElementById('riskBadge');
-    badge.textContent = riskLabels[risk] || risk;
-    badge.className = 'risk-badge risk-' + risk;
+function renderResult(d) {
+  if (!d || d.error) { alert('Помилка: ' + (d ? d.error : 'порожні дані')); return; }
 
-    // Metrics
-    function setMetric(valId, barId, detected, score) {
-      const el = document.getElementById(valId);
-      el.textContent = score + '%';
-      el.className = 'metric-val ' + (detected ? 'metric-detected' : 'metric-ok');
-      const bar = document.getElementById(barId);
-      bar.style.width = score + '%';
-      bar.style.background = scoreColor(score);
+  console.log("Рендеринг результатів. Вхідний об'єкт:", d);
+
+  const risk = d.overallRisk || d.overall_risk || 'UNKNOWN';
+  const riskLabels = {LOW:'✅ НИЗЬКИЙ РИЗИК', MEDIUM:'⚠️ СЕРЕДНІЙ РИЗИК', HIGH:'🚨 ВИСОКИЙ РИЗИК', UNKNOWN:'❓ НЕВІДОМО'};
+  const badge = document.getElementById('riskBadge');
+  badge.textContent = riskLabels[risk] || risk;
+  badge.className = 'risk-badge risk-' + risk;
+
+  // Гнучкий пошук об'єктів
+  const ai = d.aiBias || d.ai_bias || d.aibias || {};
+  const fk = d.fakeNews || d.fake_news || d.fakenews || {};
+  const pr = d.propaganda || d.propagand_info || {};
+
+  // Виправлена логіка метрик: статус detected залежить від ВЕЛИЧИНИ відсотка ризику
+  function setMetric(valId, barId, score) {
+    const el = document.getElementById(valId);
+    if (!el) return;
+
+    const finalScore = score !== undefined ? score : 0;
+    el.textContent = finalScore + '%';
+
+    // Якщо ризик більше 45% — це небезпечно (червоний), якщо менше — все ок (зелений)
+    const isDangerous = finalScore > 45;
+    el.className = 'metric-val ' + (isDangerous ? 'metric-detected' : 'metric-ok');
+
+    const bar = document.getElementById(barId);
+    if (bar) {
+      bar.style.width = finalScore + '%';
+      bar.style.background = scoreColor(finalScore);
     }
-    const ai = d.aiBias   || {};
-    const fk = d.fakeNews || {};
-    const pr = d.propaganda || {};
-    setMetric('mAiBias', 'barAiBias', ai.detected, ai.score||0);
-    setMetric('mFake',   'barFake',   fk.detected, fk.score||0);
-    setMetric('mProp',   'barProp',   pr.detected, pr.score||0);
+    return isDangerous;
+  }
 
-    document.getElementById('icoAi').textContent   = ai.detected ? '🚨' : '✅';
-    document.getElementById('icoFake').textContent = fk.detected ? '🚨' : '✅';
-    document.getElementById('icoProp').textContent = pr.detected ? '🚨' : '✅';
+  // Оновлюємо відсотки та отримуємо реальний статус небезпеки
+  const aiDanger = setMetric('mAiBias', 'barAiBias', ai.score || 0);
+  const fkDanger = setMetric('mFake',   'barFake',   fk.score || 0);
+  const prDanger = setMetric('mProp',   'barProp',   pr.score || 0);
 
-    // Use innerHTML so long explanations wrap properly
-    function setExp(id, val) {
-      const el = document.getElementById(id);
-      el.textContent = val || '—';
+  // Виставляємо іконки-емодзі відповідно до реального рівня загрози
+  document.getElementById('icoAi').textContent   = aiDanger ? '🚨' : '✅';
+  document.getElementById('icoFake').textContent = fkDanger ? '🚨' : '✅';
+  document.getElementById('icoProp').textContent = prDanger ? '🚨' : '✅';
+
+  function setExp(id, val) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.textContent = val || 'Ознак маніпуляцій або дезінформації не виявлено.';
       el.style.display = 'block';
     }
-    setExp('expAi',   ai.explanation);
-    setExp('expFake', fk.explanation);
-    setExp('expProp', pr.explanation);
+  }
+  setExp('expAi',   ai.explanation || ai.desc);
+  setExp('expFake', fk.explanation || fk.desc);
+  setExp('expProp', pr.explanation || pr.desc);
 
-    const tWrap = document.getElementById('techniques');
+  const tWrap = document.getElementById('techniques');
+  if (tWrap) {
     tWrap.innerHTML = '';
-    (pr.techniques || []).forEach(t => {
+    const techniques = pr.techniques || pr.technique_list || [];
+    techniques.forEach(t => {
       const span = document.createElement('span');
       span.className = 'technique-tag';
       span.textContent = t;
       tWrap.appendChild(span);
     });
-
-    document.getElementById('summary').textContent        = d.summary        || '';
-    document.getElementById('recommendation').textContent = d.recommendation ? '💡 ' + d.recommendation : '';
-
-    document.getElementById('resultCard').classList.add('show');
-    document.getElementById('resultCard').scrollIntoView({behavior:'smooth', block:'start'});
   }
+
+  document.getElementById('summary').textContent        = d.summary || 'Аналіз завершено.';
+  document.getElementById('recommendation').textContent = d.recommendation ? '💡 ' + d.recommendation : '';
+
+  // Примусово показуємо блок результатів
+  const resultCard = document.getElementById('resultCard');
+  resultCard.classList.add('show');
+  resultCard.style.display = 'block';
+
+  resultCard.scrollIntoView({behavior:'smooth', block:'start'});
+}
 </script>
 </body>
 </html>

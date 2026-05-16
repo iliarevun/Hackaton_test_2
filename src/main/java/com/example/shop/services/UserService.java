@@ -9,9 +9,13 @@ import com.example.shop.models.User;
 import com.example.shop.repositories.AvatarRepository;
 import com.example.shop.repositories.ConfirmationTokenRepository;
 import com.example.shop.repositories.UserRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -100,7 +104,6 @@ public class UserService {
         newUser.setPhoneNumber("Не вказаний");
         newUser.setActive(true);
         newUser.getRoles().add(Role.ROLE_ADMIN);
-        newUser.setCoins(100);
 
         // Створення аватара
         Avatar userAvatar = new Avatar();
@@ -130,6 +133,84 @@ public class UserService {
         userRepository.save(newUser);
     }
 
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found with email: " + email);
+        }
+
+        // Повертаємо об'єкт UserDetails, який розуміє Spring Security
+        return org.springframework.security.core.userdetails.User.builder()
+                .username(user.getEmail())
+                .password(user.getPassword()) // використовує вже захешований пароль з БД
+                .disabled(!user.isActive())
+                .authorities(user.getRoles().stream()
+                        .map(role -> new org.springframework.security.core.authority.SimpleGrantedAuthority(role.name()))
+                        .collect(Collectors.toList()))
+                .build();
+    }
+    public User findUserByMnemonic(String mnemonic) {
+        return userRepository.findByMnemonic(mnemonic).orElse(null);
+    }
+    public void processAndSetBiometricProfile(User user, String rawAttemptsJson) {
+        if (rawAttemptsJson == null || rawAttemptsJson.isBlank()) return;
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode attemptsNode = mapper.readTree(rawAttemptsJson);
+
+            // Перевіряємо, чи отримали ми масив із 5 спроб
+            if (!attemptsNode.isArray() || attemptsNode.size() < 5) return;
+
+            // Збираємо дані: Клавіша (код) -> Список усіх зафіксованих тривалостей натискання
+            Map<String, List<Long>> dwellTimesMap = new HashMap<>();
+
+            // 1. Проходимо по кожній із спроб
+            for (JsonNode attempt : attemptsNode) {
+                if (attempt.isArray()) {
+                    for (JsonNode event : attempt) {
+                        String code = event.path("code").asText("");
+                        long press = event.path("pressTime").asLong(0);
+                        long release = event.path("releaseTime").asLong(0);
+                        long dwellTime = release - press;
+
+                        // Фільтруємо аномалії та порожні коди
+                        if (!code.isBlank() && dwellTime > 0) {
+                            dwellTimesMap.computeIfAbsent(code, k -> new ArrayList<>()).add(dwellTime);
+                        }
+                    }
+                }
+            }
+
+            // 2. Розраховуємо середнє арифметичне значення для кожної клавіші
+            Map<String, Long> finalAverages = new HashMap<>();
+
+            // Виправлений прохід по EntrySet з чітким визначенням типів
+            for (Map.Entry<String, List<Long>> entry : dwellTimesMap.entrySet()) {
+                String keycode = entry.getKey();
+                List<Long> times = entry.getValue();
+
+                if (times != null && !times.isEmpty()) {
+                    long sum = 0;
+                    for (Long t : times) {
+                        sum += t;
+                    }
+                    long average = sum / times.size(); // Обчислюємо середнє для цієї клавіші
+                    finalAverages.put(keycode, average);
+                }
+            }
+
+            // 3. Зберігаємо усереднений біометричний профіль у форматі JSON в сутність User
+            String profileJson = mapper.writeValueAsString(finalAverages);
+            user.setBiometricProfileJson(profileJson);
+            user.setUseBiometricsWithPassword(true); // активуємо прапорець зв'язку з паролем
+
+            log.info("\u001B[32m[Biometrics] Профіль для користувача {} успішно сформовано на основі 5 спроб!\u001B[0m", user.getEmail());
+
+        } catch (Exception e) {
+            log.error("Помилка обробки біометричного тренування користувача: {}", e.getMessage());
+        }
+    }
 
     public Avatar toAvatarEntity(MultipartFile file) throws IOException {
         if (file.isEmpty()) {

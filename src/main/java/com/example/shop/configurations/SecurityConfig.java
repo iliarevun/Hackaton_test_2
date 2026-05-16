@@ -27,14 +27,8 @@ public class SecurityConfig {
                                 "/", "/registration", "/login", "/confirm",
                                 "/game.css", "/style.css", "/script.js",
                                 "/*.png", "/*.jpg", "/*.gif", "/*.svg", "/*.ico",
-                                "/avatars/**", "/images/**", "/img/**",
-                                "/setup", "/leaderboard", "/report", "/challenges", "/games", "/game/muscles", "/game/trainer", "/game/zones",
-                                "/marketplace", "/exchange", "/repair", "/referal", "/reuse",
-                                "/payment/result", "/user/**",
-                                "/media-analysis", "/media-analysis/**",
-                                "/query-proxy", "/query-proxy/**",
-                                "/steganography", "/steganography/**",
-                                "/biometrics", "/biometrics/**"
+                                "/avatars/**", "/images/**", "/img/**"
+
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

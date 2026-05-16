@@ -37,6 +37,49 @@ public class UserController {
     }
 
 
+    @PostMapping("/login/mnemonic")
+    public String loginByMnemonic(@RequestParam("mnemonicPhrase") String mnemonicPhrase,
+                                  jakarta.servlet.http.HttpServletRequest request) {
+        // Очищаємо фразу від випадкових подвійних пробілів
+        String cleanMnemonic = mnemonicPhrase.trim().replaceAll("\\s+", " ");
+
+        // 1. Шукаємо користувача через твій сервіс
+        User user = userService.findUserByMnemonic(cleanMnemonic);
+
+        if (user == null) {
+            System.out.println("\u001B[31mMnemonic login failed: Seed phrase match not found.\u001B[0m");
+            return "redirect:/login?error=mnemonic_invalid";
+        }
+
+        try {
+            // 2. Завантажуємо UserDetails, використовуючи email знайденого юзера
+            org.springframework.security.core.userdetails.UserDetails userDetails =
+                    userService.loadUserByUsername(user.getEmail());
+
+            // 3. Створюємо токен автентифікації
+            org.springframework.security.core.Authentication authentication =
+                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities()
+                    );
+
+            // 4. Встановлюємо автентифікацію в SecurityContextHolder
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // 5. Зберігаємо контекст у сесії, щоб авторизація не злітала при переході на головну сторінку
+            request.getSession().setAttribute(
+                    org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                    org.springframework.security.core.context.SecurityContextHolder.getContext()
+            );
+
+            System.out.println("\u001B[32mUser " + user.getEmail() + " successfully logged in via Seed Phrase\u001B[0m");
+            return "redirect:/";
+
+        } catch (Exception e) {
+            System.out.println("\u001B[31mAuthentication setup error: " + e.getMessage() + "\u001B[0m");
+            return "redirect:/login?error=true";
+        }
+    }
+
     @GetMapping("/registration")
     public String registration() {
 
@@ -129,9 +172,6 @@ public class UserController {
     public String profile(@PathVariable("id") String id, Model model){
         Long iD = Long.parseLong(id.replace("\u00A0", ""));
         User user = userService.getUserById(iD);
-        user.setCoins(BigDecimal.valueOf(user.getCoins())
-                .setScale(1, RoundingMode.HALF_UP)
-                .doubleValue());
         
         model.addAttribute("user", user);
      //   model.addAttribute("euro_exchange_rate", currencyExchangeService.getEuroToUahRate());
